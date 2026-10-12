@@ -1,0 +1,18 @@
+{
+  "name": "Gamifly – Dein Leben als RPG",
+  "short_name": "Gamifly",
+  "description": "Quests, Level, Inventar, 3D-Wohnung, Style Studio & Health – dein Alltag als Game.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff6fa",
+  "theme_color": "#ff8fc7",
+  "lang": "de",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
