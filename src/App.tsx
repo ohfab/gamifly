@@ -46,7 +46,7 @@ export default function App() {
   }, [hydrated])
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme
+    document.documentElement.dataset.skin = theme
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'night' ? '#120b1c' : theme === 'matcha' ? '#56682f' : '#fff6fa')
   }, [theme])
   useEffect(() => setSfx(sound), [sound])
