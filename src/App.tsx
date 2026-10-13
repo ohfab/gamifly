@@ -54,7 +54,7 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.dataset.skin = theme
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'night' ? '#120b1c' : theme === 'matcha' ? '#56682f' : '#fff6fa')
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#04060c')
   }, [theme])
   useEffect(() => setSfx(sound), [sound])
   useEffect(() => setHaptics(haptics), [haptics])

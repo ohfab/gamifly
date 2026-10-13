@@ -1,3 +1,4 @@
+import type { SkillId } from '../game/skills'
 import { todayLog, useGame, type Tab } from '../store/useGame'
 
 const TABS: Tab[] = ['status', 'quests', 'home', 'style', 'life', 'inventory']
@@ -27,6 +28,9 @@ export function runCmd(cmd: string): string | null {
       return `Eingetragen. Du bist jetzt bei ${todayLog(useGame.getState()).water} von 8 Gläsern.`
     case 'gate':
       s.setTab('life'); s.startGate(arg || 'C'); s.setUi({ companionOpen: false })
+      return null
+    case 'skill':
+      s.castSkill(arg as SkillId)
       return null
     case 'done': {
       const q = s.quests.find((x) => x.id === arg)

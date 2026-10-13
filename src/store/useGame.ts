@@ -1,8 +1,9 @@
 import { create } from 'zustand'
 import { DEFAULT_LOOK, type AvatarLook } from '../avatar/look'
+import { RED_GATE_MIN, RED_GATE_TASKS, SKILLS, ariseChance, shadowBossBonus, shadowXpBonus, type RedGate, type Shadow, type SkillId, type SkillState } from '../game/skills'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import type {
-  Cloth, DayLog, Device, FridgeItem, InvEntry, ItemDef, LogEntry, Need, Outfit, Player, Quest, Room,
+  Cloth, DayLog, Device, FloorPlan, FridgeItem, InvEntry, ItemDef, LogEntry, Need, Outfit, Player, Quest, Room,
   RoomItem, ShopItem, Slot, StatKey, Stats, Toast,
 } from '../game/types'
 import { ITEMS, nextRarity, rollItem } from '../game/items'
@@ -11,7 +12,7 @@ import { STAT_KEYS, STAT_META, STAT_XP_PER_POINT, xpToNext } from '../game/level
 import { ACHIEVEMENTS } from '../game/achievements'
 import { BONUS_POOL, BOSSES, GATE_RANKS, JOBS, JOB_BONUS, JOB_LEVEL, bossHpFor } from '../game/world'
 import { RECIPES } from '../data/recipes'
-import { DEFAULT_DEVICES, DEFAULT_FRIDGE, DEFAULT_ROOMS, DEFAULT_SHOPPING } from '../data/home'
+import { DEFAULT_DEVICES, DEFAULT_FRIDGE, DEFAULT_RECTS, DEFAULT_ROOMS, DEFAULT_SHOPPING, KIND_NEEDS } from '../data/home'
 import { idbStorage } from '../lib/storage'
 import { dayKey, daysBetween, uid, weekKey } from '../lib/util'
 import { sfx } from '../lib/sfx'
@@ -21,11 +22,8 @@ import { foodArt, resolveArt, thingArt } from '../art/Art'
 export type Tab = 'status' | 'quests' | 'home' | 'style' | 'life' | 'inventory'
 
 export interface ChatMsg { id: string; role: 'user' | 'lumi'; text: string; t: number; actions?: { label: string; cmd: string }[] }
-export interface CompanionSettings {
-  voice: boolean; autoSpeak: boolean; voiceURI: string; rate: number; pitch: number
-  tips: boolean; apiKey: string; useClaude: boolean
-}
-export interface BossState { week: string; idx: number; hp: number; maxHp: number; defeated: boolean }
+export interface CompanionSettings { tips: boolean; apiKey: string; useClaude: boolean }
+export interface BossState { week: string; idx: number; hp: number; maxHp: number; defeated: boolean; arise?: number; extracted?: boolean }
 export interface GateState { rank: string; start: number; minutes: number }
 export interface Journal { text: string; grateful: string[] }
 
@@ -44,15 +42,15 @@ export interface GameState {
   questWeek: string
   history: Record<string, string[]>
   health: Record<string, DayLog>
-  home: { rooms: Room[]; devices: Device[]; fridge: FridgeItem[]; shopping: ShopItem[]; cleanedWeek: string[] }
+  home: { rooms: Room[]; devices: Device[]; fridge: FridgeItem[]; shopping: ShopItem[]; cleanedWeek: string[]; plan?: FloorPlan }
   wardrobe: Cloth[]
   outfits: Outfit[]
   wornLog: Record<string, string[]>
   achievements: string[]
   titles: string[]
-  stats: { questsDone: number; legendaryFound: number; fusions: number; rewardsRedeemed: number; bossesDefeated: number; gatesCleared: number; journalDays: number; recipesCooked: number }
+  stats: { questsDone: number; legendaryFound: number; fusions: number; rewardsRedeemed: number; bossesDefeated: number; gatesCleared: number; journalDays: number; recipesCooked: number; redGates: number; skillsCast: number; shadowsRaised: number }
   log: LogEntry[]
-  settings: { theme: 'matcha' | 'pastel' | 'night'; sound: boolean; haptics: boolean }
+  settings: { theme: 'system' | 'monarch' | 'crimson'; sound: boolean; haptics: boolean }
   chestDay: string
   boss: BossState | null
   gate: GateState | null
@@ -64,6 +62,10 @@ export interface GameState {
   tourDone: boolean
   tipsSeen: Record<string, string>
   avatar: AvatarLook
+  skills: SkillState
+  shadows: Shadow[]
+  redGate: RedGate | null
+  redGatePlan: { day: string; at: number | null }
 
   // ephemeral ui
   tab: Tab
@@ -75,6 +77,7 @@ export interface GameState {
   tourStep: number | null
   fridgeOpen: boolean
   bossHit: number
+  ariseFx: number
 
   setTab: (t: Tab) => void
   notify: (t: Omit<Toast, 'id'>) => void
@@ -122,6 +125,7 @@ export interface GameState {
 
   cleanRoom: (id: string) => void
   renameRoom: (id: string, name: string) => void
+  setLayout: (rooms: Pick<Room, 'id' | 'name' | 'kind' | 'rect'>[], plan?: FloorPlan) => void
   addRoomItem: (roomId: string, item: Omit<RoomItem, 'id'>) => void
   removeRoomItem: (roomId: string, id: string) => void
   addNeed: (roomId: string, text: string) => void
@@ -146,6 +150,10 @@ export interface GameState {
 
   setSettings: (s: Partial<GameState['settings']>) => void
   setAvatar: (p: Partial<AvatarLook>) => void
+  castSkill: (id: SkillId) => boolean
+  arise: () => boolean
+  checkRedGate: () => void
+  confirmRedGate: () => void
   setCompanion: (s: Partial<CompanionSettings>) => void
   pushChat: (m: Omit<ChatMsg, 'id' | 't'>) => void
   clearChat: () => void
@@ -166,11 +174,11 @@ const freshQuests = (): Quest[] => [...DAILY_TEMPLATES.map(fromTpl), ...WEEKLY_T
 const PERSIST_KEYS = [
   'onboarded', 'player', 'inventory', 'equipped', 'customItems', 'quests', 'questDay', 'questWeek', 'history',
   'health', 'home', 'wardrobe', 'outfits', 'wornLog', 'achievements', 'titles', 'stats', 'log', 'settings', 'chestDay',
-  'boss', 'gate', 'job', 'journal', 'cooked', 'companion', 'chat', 'tourDone', 'tipsSeen', 'avatar',
+  'boss', 'gate', 'job', 'journal', 'cooked', 'companion', 'chat', 'tourDone', 'tipsSeen', 'avatar', 'skills', 'shadows', 'redGate', 'redGatePlan',
 ] as const
 
-const defaultCompanion = (): CompanionSettings => ({ voice: true, autoSpeak: true, voiceURI: '', rate: 1.02, pitch: 1.12, tips: true, apiKey: '', useClaude: false })
-const defaultStats = () => ({ questsDone: 0, legendaryFound: 0, fusions: 0, rewardsRedeemed: 0, bossesDefeated: 0, gatesCleared: 0, journalDays: 0, recipesCooked: 0 })
+const defaultCompanion = (): CompanionSettings => ({ tips: true, apiKey: '', useClaude: false })
+const defaultStats = () => ({ questsDone: 0, legendaryFound: 0, fusions: 0, rewardsRedeemed: 0, bossesDefeated: 0, gatesCleared: 0, journalDays: 0, recipesCooked: 0, redGates: 0, skillsCast: 0, shadowsRaised: 0 })
 
 const baseData = () => ({
   onboarded: false,
@@ -187,7 +195,7 @@ const baseData = () => ({
   questWeek: weekKey(),
   history: {} as Record<string, string[]>,
   health: {} as Record<string, DayLog>,
-  home: { rooms: DEFAULT_ROOMS, devices: DEFAULT_DEVICES, fridge: DEFAULT_FRIDGE, shopping: DEFAULT_SHOPPING, cleanedWeek: [] as string[] },
+  home: { rooms: DEFAULT_ROOMS.map((r) => ({ ...r, rect: DEFAULT_RECTS[r.id] })), devices: DEFAULT_DEVICES, fridge: DEFAULT_FRIDGE, shopping: DEFAULT_SHOPPING, cleanedWeek: [] as string[] },
   wardrobe: [] as Cloth[],
   outfits: [] as Outfit[],
   wornLog: {} as Record<string, string[]>,
@@ -195,7 +203,7 @@ const baseData = () => ({
   titles: ['Erwachte Seele'],
   stats: defaultStats(),
   log: [] as LogEntry[],
-  settings: { theme: 'matcha' as GameState['settings']['theme'], sound: true, haptics: true },
+  settings: { theme: 'system' as GameState['settings']['theme'], sound: true, haptics: true },
   chestDay: '',
   boss: null as BossState | null,
   gate: null as GateState | null,
@@ -207,6 +215,10 @@ const baseData = () => ({
   tourDone: false,
   tipsSeen: {} as Record<string, string>,
   avatar: DEFAULT_LOOK,
+  skills: { day: '', spent: 0, buffs: {} } as SkillState,
+  shadows: [] as Shadow[],
+  redGate: null as RedGate | null,
+  redGatePlan: { day: '', at: null } as { day: string; at: number | null },
 })
 
 const BOSS_WEAKNESS: Record<string, GameState['damageBoss'] extends (n: number, s: infer S) => void ? S : never> = {
@@ -235,6 +247,7 @@ export const useGame = create<GameState>()(
         tourStep: null,
         fridgeOpen: false,
         bossHit: 0,
+        ariseFx: 0,
 
         setTab: (tab) => set({ tab }),
         notify: (t) => {
@@ -306,7 +319,14 @@ export const useGame = create<GameState>()(
             const hp = bossHpFor(player.level)
             boss = { week: wk, idx: hash(wk) % BOSSES.length, hp, maxHp: hp, defeated: false }
           }
-          set({ quests, player, questDay: today, questWeek: wk, boss, home: { ...get().home, cleanedWeek } })
+          let redGatePlan = s.redGatePlan
+          if (redGatePlan?.day !== today) {
+            const now = new Date()
+            const from = Math.max(now.getTime() + 20 * 60000, new Date(now).setHours(9, 0, 0, 0))
+            const to = new Date(now).setHours(20, 30, 0, 0)
+            redGatePlan = { day: today, at: Math.random() < 0.4 && to > from ? from + Math.random() * (to - from) : null }
+          }
+          set({ quests, player, questDay: today, questWeek: wk, boss, redGatePlan, home: { ...get().home, cleanedWeek } })
           get().checkGate()
           get().evaluate()
         },
@@ -337,6 +357,14 @@ export const useGame = create<GameState>()(
           })
           set({ quests })
           toComplete.forEach((id) => get().completeQuest(id))
+          const rg = get().redGate
+          if (rg && !rg.done) {
+            const t = RED_GATE_TASKS.find((x) => x.id === rg.task)
+            if (t?.metric && t.amount) {
+              const cur = t.metric === 'quests' ? get().stats.questsDone : ((todayLog(get())[t.metric] as number | undefined) ?? 0)
+              if (cur - rg.base >= t.amount) get().confirmRedGate()
+            }
+          }
         },
 
         checkAchievements: () => {
@@ -419,7 +447,10 @@ export const useGame = create<GameState>()(
           const q = s.quests.find((x) => x.id === id)
           if (!q || q.done) return
           const today = dayKey()
-          const xp = Math.round(q.xp * jobBonus(q.cat))
+          const buffs = s.skills.buffs
+          const dash = buffs.dash && buffs.dash.until > Date.now() && buffs.dash.charges > 0
+          if (dash) set({ skills: { ...s.skills, buffs: { ...buffs, dash: { ...buffs.dash!, charges: buffs.dash!.charges - 1 } } } })
+          const xp = Math.round(q.xp * jobBonus(q.cat) * shadowXpBonus(s.shadows, q.cat) * (dash ? 1.5 : 1))
           sfx.quest()
           buzz(18)
           set({
@@ -432,10 +463,13 @@ export const useGame = create<GameState>()(
           log(`Quest abgeschlossen: ${q.title}`, 'star')
           get().addStatXp(q.statXp)
 
-          const r = Math.random()
+          const ruler = !!get().skills.buffs.ruler && q.type !== 'penalty'
+          if (ruler) set((st) => ({ skills: { ...st.skills, buffs: { ...st.skills.buffs, ruler: false } } }))
+          const r = ruler ? 0 : Math.random()
           const lootChance = q.type === 'daily' ? 0.3 : q.type === 'penalty' ? 0 : 0.75
           if (r < lootChance) {
-            const item = rollItem(q.type === 'main' ? 1 : 0)
+            let item = rollItem(ruler ? 2 : q.type === 'main' ? 1 : 0)
+            for (let i = 0; ruler && i < 12 && ['common', 'uncommon'].includes(item.rarity); i++) item = rollItem(2)
             get().grant(item.id)
             if (['rare', 'epic', 'legendary', 'mythic'].includes(item.rarity)) setTimeout(() => set({ reveal: [item] }), 500)
             else setTimeout(() => get().notify({ tone: 'loot', icon: item.icon, title: 'Item erhalten', body: item.name }), 300)
@@ -491,11 +525,13 @@ export const useGame = create<GameState>()(
           const b = get().boss
           if (!b || b.defeated || n <= 0) return
           const boss = BOSSES[b.idx]
-          const crit = BOSS_WEAKNESS[boss.id] === source
-          const dmg = Math.round(n * (crit ? 2 : 1))
+          const blood = (get().skills.buffs.bloodlust ?? 0) > 0
+          if (blood) set((st) => ({ skills: { ...st.skills, buffs: { ...st.skills.buffs, bloodlust: (st.skills.buffs.bloodlust ?? 1) - 1 } } }))
+          const crit = BOSS_WEAKNESS[boss.id] === source || blood
+          const dmg = Math.round(n * (crit ? 2 : 1) * shadowBossBonus(get().shadows))
           const hp = Math.max(0, b.hp - dmg)
           set({ boss: { ...b, hp, defeated: hp === 0 }, bossHit: Date.now() })
-          if (crit) get().notify({ tone: 'good', icon: boss.art, title: `Kritischer Treffer! −${dmg}`, body: `${boss.name} ist schwach gegen: ${boss.weakness}` })
+          if (crit) get().notify({ tone: 'good', icon: boss.art, title: `Kritischer Treffer! −${dmg}`, body: blood ? 'Blutrausch' : `${boss.name} ist schwach gegen: ${boss.weakness}` })
           if (hp === 0) {
             sfx.level()
             buzz([50, 50, 50, 50, 150])
@@ -505,6 +541,7 @@ export const useGame = create<GameState>()(
             setTimeout(() => {
               set({ reveal: [{ ...ITEMS.find((i) => i.id === 'gold_chest')!, name: '300 Gold · 10 Kristalle', desc: `${boss.name} wurde besiegt!` }, ...loot] })
               get().notify({ tone: 'loot', icon: boss.art, title: 'Wochenboss besiegt!', body: boss.name })
+              setTimeout(() => get().notify({ tone: 'system', icon: 'shadow', title: 'Schatten-Extraktion möglich', body: 'Nutze „Erhebe dich“ im Boss-Fenster. 3 Versuche.' }), 2600)
             }, 600)
             log(`Wochenboss besiegt: ${boss.name}`, boss.art)
             get().checkAchievements()
@@ -520,11 +557,14 @@ export const useGame = create<GameState>()(
           log(`Gate betreten: Rang ${rank} (${g.minutes} Min.)`, 'gate')
         },
         checkGate: () => {
+          get().checkRedGate()
           const gs = get().gate
           if (!gs || Date.now() - gs.start < gs.minutes * 60000) return
           const g = GATE_RANKS.find((x) => x.rank === gs.rank)!
           set({ gate: null })
-          const xp = Math.round(g.xp * (get().job === 'sage' ? 1 + JOB_BONUS : 1))
+          const stealth = !!get().skills.buffs.stealth
+          if (stealth) set((st) => ({ skills: { ...st.skills, buffs: { ...st.skills.buffs, stealth: false } } }))
+          const xp = Math.round(g.xp * (get().job === 'sage' ? 1 + JOB_BONUS : 1) * shadowXpBonus(get().shadows, undefined, true) * (stealth ? 2 : 1))
           set((s) => ({ stats: { ...s.stats, gatesCleared: s.stats.gatesCleared + 1 } }))
           get().addStatXp({ int: g.minutes, per: Math.round(g.minutes / 2) })
           const item = rollItem(g.tier)
@@ -704,6 +744,19 @@ export const useGame = create<GameState>()(
           get().checkAchievements()
         },
         renameRoom: (id, name) => mapRoom(id, (r) => ({ ...r, name })),
+        setLayout: (layout, plan) => set((s) => {
+          const old = new Map(s.home.rooms.map((r) => [r.id, r]))
+          const rooms: Room[] = layout.map((l) => {
+            const prev = old.get(l.id)
+            return prev
+              ? { ...prev, name: l.name, kind: l.kind, rect: l.rect }
+              : { id: l.id, name: l.name, kind: l.kind, rect: l.rect, lastCleaned: Date.now(), items: [], needs: KIND_NEEDS[l.kind].map((text) => ({ id: uid(), text, done: false })) }
+          })
+          const ids = new Set(rooms.map((r) => r.id))
+          const fallback = rooms[0]?.id
+          const devices = s.home.devices.filter((d) => ids.has(d.roomId) || fallback).map((d) => (ids.has(d.roomId) ? d : { ...d, roomId: fallback! }))
+          return { home: { ...s.home, rooms, devices, plan } }
+        }),
         addRoomItem: (roomId, item) => { mapRoom(roomId, (r) => ({ ...r, items: [...r.items, { ...item, id: uid() }] })); get().evaluate() },
         removeRoomItem: (roomId, id) => { mapRoom(roomId, (r) => ({ ...r, items: r.items.filter((i) => i.id !== id) })); get().evaluate() },
         addNeed: (roomId, text) => mapRoom(roomId, (r) => ({ ...r, needs: [...r.needs, { id: uid(), text, done: false }] })),
@@ -765,6 +818,98 @@ export const useGame = create<GameState>()(
 
         setSettings: (p) => set((s) => ({ settings: { ...s.settings, ...p } })),
         setAvatar: (p) => set((s) => ({ avatar: { ...s.avatar, ...p, shape: { ...s.avatar.shape, ...p.shape } } })),
+
+        castSkill: (id) => {
+          const s = get()
+          const sk = SKILLS.find((x) => x.id === id)
+          if (!sk) return false
+          if (id === 'arise') return get().arise()
+          if (s.player.level < sk.level) { get().notify({ tone: 'warn', icon: sk.art, title: 'Skill gesperrt', body: `Ab Level ${sk.level} verfügbar.` }); return false }
+          if (mpLeft(s) < sk.mp) { sfx.warn(); get().notify({ tone: 'warn', icon: 'mana', title: 'Nicht genug Mana', body: 'Meditation und gute Stimmung füllen dein MP.' }); return false }
+          const today = dayKey()
+          const buffs = { ...s.skills.buffs }
+          if (id === 'dash') buffs.dash = { until: Date.now() + 3600000, charges: 3 }
+          if (id === 'bloodlust') buffs.bloodlust = 3
+          if (id === 'stealth') buffs.stealth = true
+          if (id === 'ruler') buffs.ruler = true
+          set({ skills: { day: today, spent: (s.skills.day === today ? s.skills.spent : 0) + sk.mp, buffs }, stats: { ...s.stats, skillsCast: (s.stats.skillsCast ?? 0) + 1 } })
+          sfx.level()
+          buzz([20, 30, 60])
+          get().notify({ tone: 'system', icon: sk.art, title: `Skill aktiviert: ${sk.name}`, body: `−${sk.mp} MP · ${sk.desc}` })
+          log(`Skill eingesetzt: ${sk.name}`, sk.art)
+          return true
+        },
+
+        arise: () => {
+          const s = get()
+          const b = s.boss
+          const sk = SKILLS.find((x) => x.id === 'arise')!
+          if (!b?.defeated || b.extracted || (b.arise ?? 0) >= 3) return false
+          if (mpLeft(s) < sk.mp) { sfx.warn(); get().notify({ tone: 'warn', icon: 'mana', title: 'Nicht genug Mana', body: `„Erhebe dich“ braucht ${sk.mp} MP.` }); return false }
+          const today = dayKey()
+          const boss = BOSSES[b.idx]
+          const ok = Math.random() < ariseChance(effectiveStats(s).total.int)
+          const tries = (b.arise ?? 0) + 1
+          set({ skills: { ...s.skills, day: today, spent: (s.skills.day === today ? s.skills.spent : 0) + sk.mp }, boss: { ...b, arise: tries, extracted: ok || undefined }, ariseFx: Date.now() })
+          buzz(ok ? [40, 60, 40, 60, 200] : [80])
+          if (ok) {
+            const prev = s.shadows.find((x) => x.boss === boss.id)
+            const shadows = prev ? s.shadows.map((x) => (x.boss === boss.id ? { ...x, rank: Math.min(4, x.rank + 1) } : x)) : [...s.shadows, { boss: boss.id, rank: 0, since: Date.now() }]
+            set({ shadows, stats: { ...s.stats, shadowsRaised: (s.stats.shadowsRaised ?? 0) + 1 } })
+            sfx.level()
+            get().notify({ tone: 'system', icon: 'shadow', title: 'ERHEBE DICH', body: prev ? 'Dein Schatten ist aufgestiegen.' : 'Ein neuer Schatten hat sich deiner Armee angeschlossen.' })
+            log(`Schatten extrahiert: ${boss.name}`, 'shadow')
+            get().checkAchievements()
+          } else {
+            sfx.warn()
+            get().notify({ tone: 'warn', icon: 'shadow', title: 'Extraktion fehlgeschlagen', body: tries >= 3 ? 'Der Schatten ist verblasst.' : `Noch ${3 - tries} Versuch${3 - tries > 1 ? 'e' : ''}.` })
+          }
+          return ok
+        },
+
+        checkRedGate: () => {
+          const s = get()
+          if (!s.onboarded) return
+          const now = Date.now()
+          const rg = s.redGate
+          if (rg && !rg.done && now > rg.until) {
+            const loss = Math.min(s.player.gold, 50)
+            set({ redGate: null, player: { ...s.player, gold: s.player.gold - loss } })
+            sfx.warn()
+            get().notify({ tone: 'warn', icon: 'red_gate', title: 'Red Gate kollabiert', body: `Die Monster sind entkommen. −${loss} Gold.` })
+            log('Red Gate verloren', 'red_gate')
+            return
+          }
+          const plan = s.redGatePlan
+          if (!rg && plan?.day === dayKey() && plan.at && now >= plan.at) {
+            const t = RED_GATE_TASKS[Math.floor(Math.random() * RED_GATE_TASKS.length)]
+            const base = t.metric === 'quests' ? s.stats.questsDone : t.metric ? ((todayLog(s)[t.metric] as number | undefined) ?? 0) : 0
+            set({ redGate: { task: t.id, opened: now, until: now + RED_GATE_MIN * 60000, base }, redGatePlan: { ...plan, at: null } })
+            sfx.warn()
+            buzz([90, 60, 90, 60, 90])
+            get().notify({ tone: 'warn', icon: 'red_gate', title: 'RED GATE GEÖFFNET', body: `${t.title}: ${t.desc} ${RED_GATE_MIN} Minuten.` })
+            log(`Red Gate: ${t.title}`, 'red_gate')
+          }
+        },
+
+        confirmRedGate: () => {
+          const s = get()
+          const rg = s.redGate
+          if (!rg || rg.done) return
+          const t = RED_GATE_TASKS.find((x) => x.id === rg.task)
+          set({ redGate: { ...rg, done: true }, player: { ...s.player, gold: s.player.gold + 120, gems: s.player.gems + 3 }, stats: { ...s.stats, redGates: (s.stats.redGates ?? 0) + 1 } })
+          const item = rollItem(2)
+          get().grant(item.id)
+          sfx.loot()
+          buzz([30, 40, 30, 40, 120])
+          setTimeout(() => set({ reveal: [{ ...ITEMS.find((i) => i.id === 'gold_chest')!, name: '120 Gold · 3 Kristalle', desc: 'Red Gate gecleart!' }, item] }), 400)
+          get().notify({ tone: 'loot', icon: 'red_gate', title: 'Red Gate gecleart', body: `${t?.title ?? ''} · +160 XP` })
+          log(`Red Gate gecleart: ${t?.title ?? ''}`, 'red_gate')
+          get().gainXp(160, true)
+          get().damageBoss(120, 'quest')
+          setTimeout(() => set({ redGate: null }), 4000)
+          get().checkAchievements()
+        },
         setCompanion: (p) => set((s) => ({ companion: { ...s.companion, ...p } })),
         pushChat: (m) => set((s) => ({ chat: [...s.chat, { ...m, id: uid(), t: Date.now() }].slice(-60) })),
         clearChat: () => set({ chat: [] }),
@@ -794,7 +939,7 @@ export const useGame = create<GameState>()(
     },
     {
       name: 'gamifly-save',
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => idbStorage),
       partialize: (s) => Object.fromEntries(PERSIST_KEYS.map((k) => [k, s[k]])) as Partial<GameState>,
       migrate: (persisted) => migrateSave(persisted as Record<string, unknown>) as unknown as GameState,
@@ -806,6 +951,7 @@ export const useGame = create<GameState>()(
           companion: { ...current.companion, ...p.companion },
           stats: { ...current.stats, ...p.stats },
           avatar: { ...current.avatar, ...p.avatar, shape: { ...current.avatar.shape, ...p.avatar?.shape } },
+          skills: { ...current.skills, ...p.skills, buffs: { ...p.skills?.buffs } },
         }
       },
     },
@@ -821,14 +967,16 @@ function migrateSave(d: Record<string, unknown>): Record<string, unknown> {
   if (home) {
     out.home = {
       ...home,
-      rooms: home.rooms.map((r) => ({ ...r, items: r.items.map((it) => ({ ...it, icon: resolveArt(it.icon) !== 'sparkle' ? resolveArt(it.icon) : thingArt(it.name) })) })),
+      rooms: home.rooms.map((r) => ({ ...r, rect: r.rect ?? DEFAULT_RECTS[r.id], items: r.items.map((it) => ({ ...it, icon: resolveArt(it.icon) !== 'sparkle' ? resolveArt(it.icon) : thingArt(it.name) })) })),
       fridge: home.fridge.map((f) => ({ ...f, icon: foodArt(f.name) })),
     }
   }
   const lg = out.log as LogEntry[] | undefined
   if (lg) out.log = lg.map((l) => ({ ...l, icon: resolveArt(l.icon) }))
   out.stats = { ...defaultStats(), ...(out.stats as object) }
-  out.settings = { theme: 'matcha', sound: true, haptics: true, ...(out.settings as object) }
+  out.settings = { theme: 'system', sound: true, haptics: true, ...(out.settings as object) }
+  const st = out.settings as { theme: string }
+  if (!['system', 'monarch', 'crimson'].includes(st.theme)) st.theme = 'system'
   return out
 }
 
@@ -856,3 +1004,12 @@ export function vitals(s: Pick<GameState, 'health' | 'player' | 'equipped' | 'it
 }
 
 export const todayLog = (s: Pick<GameState, 'health'>) => s.health[dayKey()] ?? emptyDay()
+
+/** MP left today: the daily pool from vitals minus what skills used up. */
+export function mpLeft(s: Pick<GameState, 'health' | 'player' | 'equipped' | 'itemDef' | 'skills'>) {
+  const v = vitals(s)
+  return Math.max(0, v.mp - (s.skills.day === dayKey() ? s.skills.spent : 0))
+}
+
+// dev / e2e helper: lets automated tests drive the game state
+if (import.meta.env.DEV && typeof window !== 'undefined') (window as unknown as { __game: typeof useGame }).__game = useGame

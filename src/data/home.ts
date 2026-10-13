@@ -1,4 +1,4 @@
-import type { Device, FridgeItem, Room, ShopItem } from '../game/types'
+import type { Device, FridgeItem, Room, RoomKind, RoomRect, ShopItem } from '../game/types'
 import { addDays, dayKey } from '../lib/util'
 
 const ago = (d: number) => Date.now() - d * 86400000
@@ -81,5 +81,18 @@ export const DEFAULT_SHOPPING: ShopItem[] = [
 ]
 
 export const ROOM_ICON: Record<string, string> = {
-  living: 'sofa', kitchen: 'pan', bedroom: 'bed', hall: 'door', bath: 'tub',
+  living: 'sofa', kitchen: 'pan', bedroom: 'bed', hall: 'door', bath: 'tub', office: 'desk', other: 'box',
+}
+export const ROOM_KINDS: { v: RoomKind; label: string }[] = [
+  { v: 'living', label: 'Wohnen' }, { v: 'kitchen', label: 'Küche' }, { v: 'bedroom', label: 'Schlafen' }, { v: 'bath', label: 'Bad' },
+  { v: 'hall', label: 'Flur' }, { v: 'office', label: 'Arbeiten' }, { v: 'other', label: 'Sonstiges' },
+]
+/** Footprints of the sample apartment (metres). */
+export const DEFAULT_RECTS: Record<string, RoomRect> = {
+  living: { x: 0, z: 0, w: 6, d: 4 }, kitchen: { x: 6, z: 0, w: 6, d: 4 }, bedroom: { x: 0, z: 4, w: 4.5, d: 4 },
+  hall: { x: 4.5, z: 4, w: 3, d: 4 }, bath: { x: 7.5, z: 4, w: 4.5, d: 4 },
+}
+export const KIND_NEEDS: Record<RoomKind, string[]> = {
+  living: ['Staub wischen'], kitchen: ['Kühlschrank checken'], bedroom: ['Bettwäsche wechseln'], bath: ['Handtücher waschen'],
+  hall: ['Schuhe sortieren'], office: ['Schreibtisch aufräumen'], other: [],
 }

@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { Gift, Plus, Check } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { effectiveStats, useGame, vitals } from '../store/useGame'
+import { effectiveStats, mpLeft, useGame, vitals } from '../store/useGame'
 import { STAT_KEYS, STAT_META, STAT_XP_PER_POINT, rankFor, xpToNext } from '../game/leveling'
 import { SLOT_META } from '../game/items'
 import { JOBS, JOB_LEVEL } from '../game/world'
@@ -10,6 +10,7 @@ import { dayKey, fmt, fmtDuration, msToMidnight } from '../lib/util'
 import { Bar, ColorBar, HoldButton, Stagger, itemV } from '../components/ui'
 import { Radar } from '../components/Charts'
 import { BossCard } from '../components/BossCard'
+import { RedGateCard, ShadowArmy, SkillsCard } from '../components/Systems'
 import { Art } from '../art/Art'
 
 function Countdown() {
@@ -65,6 +66,8 @@ export default function Status() {
         </motion.span>
       </div>
 
+      {s.redGate && <div style={{ marginBottom: 16 }}><RedGateCard /></div>}
+
       {penalty.length > 0 && (
         <motion.div className="sys" style={{ marginBottom: 16, ['--sys' as string]: 'var(--danger)', ['--sys-glow' as string]: 'rgba(239,90,122,.4)' }} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
           <div className="sys-head">Strafzone</div>
@@ -102,7 +105,7 @@ export default function Status() {
             </div>
             <div className="col" style={{ gap: 8, marginTop: 14 }}>
               <div className="row"><span className="mono tiny" style={{ width: 26 }}>HP</span><div className="grow"><Bar kind="hp" value={v.hp} max={v.maxHp} /></div><span className="mono tiny muted" style={{ width: 64, textAlign: 'right' }}>{v.hp}/{v.maxHp}</span></div>
-              <div className="row"><span className="mono tiny" style={{ width: 26 }}>MP</span><div className="grow"><Bar kind="mp" value={v.mp} max={v.maxMp} /></div><span className="mono tiny muted" style={{ width: 64, textAlign: 'right' }}>{v.mp}/{v.maxMp}</span></div>
+              <div className="row"><span className="mono tiny" style={{ width: 26 }}>MP</span><div className="grow"><Bar kind="mp" value={mpLeft(s)} max={v.maxMp} /></div><span className="mono tiny muted" style={{ width: 64, textAlign: 'right' }}>{mpLeft(s)}/{v.maxMp}</span></div>
               <div className="row"><span className="mono tiny" style={{ width: 26 }}>XP</span><div className="grow"><Bar value={p.xp} max={xpToNext(p.level)} /></div><span className="mono tiny muted" style={{ width: 64, textAlign: 'right' }}>{Math.round((p.xp / xpToNext(p.level)) * 100)}%</span></div>
               <p className="tiny muted" style={{ margin: 0 }}>HP steigt mit Schlaf, Wasser & Schritten · MP mit Stimmung & Meditation</p>
             </div>
@@ -168,6 +171,8 @@ export default function Status() {
           </motion.div>
 
           <motion.div variants={itemV}><BossCard /></motion.div>
+          <SkillsCard />
+          <ShadowArmy />
 
           <motion.div variants={itemV} className="card chest-card">
             <div className="row">

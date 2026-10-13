@@ -11,7 +11,7 @@ const BASE: Record<string, ArtDef> = { ...ITEM_ART, ...WORLD_ART, ...FOOD_ART, .
 const MEDALS: Record<string, string> = {
   awaken: 'sunrise', first: 'sprout', q50: 'swords', lv5: 'stairs', lv10: 'medal_plain', streak3: 'flame', streak7: 'comet',
   water: 'drop', steps: 'run_shoe', sleep: 'moon_sleep', closet10: 'dress', outfit: 'mirror', clean: 'broom', fridge: 'fridge',
-  legend: 'star', fusion: 'crystal_ball', shop: 'boba', rich: 'coin', boss: 'boss_dragon', gate: 'gate', job: 'tiara', journal: 'book', chef: 'bowl',
+  legend: 'star', fusion: 'crystal_ball', shop: 'boba', rich: 'coin', boss: 'boss_dragon', gate: 'gate', job: 'tiara', journal: 'book', chef: 'bowl', shadow: 'shadow', redgate: 'red_gate', skill: 'skill',
 }
 for (const [k, inner] of Object.entries(MEDALS)) BASE[`ach_${k}`] = medal(BASE[inner] ?? BASE.star)
 

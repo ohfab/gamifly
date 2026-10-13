@@ -1,4 +1,4 @@
-import { BookOpen, Download, Leaf, MessageCircle, Moon, RotateCcw, Smartphone, Sun, Upload, Volume2, VolumeX } from 'lucide-react'
+import { BookOpen, Compass, Download, MessageCircle, RotateCcw, Smartphone, Upload, Volume2, VolumeX } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useGame } from '../store/useGame'
 import { Seg, Sheet } from './ui'
@@ -33,8 +33,12 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
           </div>
         </label>
         <div className="col" style={{ gap: 8 }}>
-          <span style={{ fontWeight: 600 }}>Theme</span>
-          <Seg id="theme" value={s.settings.theme} onChange={(theme) => s.setSettings({ theme })} options={[{ v: 'matcha', label: <span className="row" style={{ gap: 6 }}><Leaf size={14} /> Matcha</span> }, { v: 'pastel', label: <span className="row" style={{ gap: 6 }}><Sun size={14} /> Pastell</span> }, { v: 'night', label: <span className="row" style={{ gap: 6 }}><Moon size={14} /> Night</span> }]} />
+          <span style={{ fontWeight: 600 }}>System-Farbe</span>
+          <Seg id="theme" value={s.settings.theme} onChange={(theme) => s.setSettings({ theme })} options={[
+            { v: 'system', label: <span className="row" style={{ gap: 6 }}><i className="skin-dot" style={{ background: '#4cc9ff' }} /> System</span> },
+            { v: 'monarch', label: <span className="row" style={{ gap: 6 }}><i className="skin-dot" style={{ background: '#a98bff' }} /> Monarch</span> },
+            { v: 'crimson', label: <span className="row" style={{ gap: 6 }}><i className="skin-dot" style={{ background: '#ff5470' }} /> Red Gate</span> },
+          ]} />
         </div>
         <div className="row between">
           <span style={{ fontWeight: 600 }}>Sounds</span>
@@ -48,10 +52,10 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
         </div>
         <div className="divider" style={{ margin: 0 }} />
         <div>
-          <div style={{ fontWeight: 600, marginBottom: 8 }}>Lumi & Guide</div>
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>System & Guide</div>
           <div className="row wrap">
-            <button className="btn ghost sm" onClick={() => { onClose(); s.setUi({ companionOpen: true }) }}><MessageCircle size={16} /> Lumi öffnen</button>
-            <button className="btn ghost sm" onClick={() => { onClose(); s.setUi({ tourStep: 0 }) }}><Sun size={16} /> Tour starten</button>
+            <button className="btn ghost sm" onClick={() => { onClose(); s.setUi({ companionOpen: true }) }}><MessageCircle size={16} /> System öffnen</button>
+            <button className="btn ghost sm" onClick={() => { onClose(); s.setUi({ tourStep: 0 }) }}><Compass size={16} /> Tour starten</button>
             <button className="btn ghost sm" onClick={() => { onClose(); s.setUi({ handbook: 'start' }) }}><BookOpen size={16} /> Handbuch</button>
           </div>
         </div>

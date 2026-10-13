@@ -1,3 +1,4 @@
+import type { SkillId } from '../game/skills'
 import type Anthropic from '@anthropic-ai/sdk'
 import { useGame, type Tab } from '../store/useGame'
 import { TOPICS } from '../guide/topics'
@@ -10,12 +11,12 @@ type Tool = Anthropic.Beta.BetaTool
 
 export const CLAUDE_MODEL = 'claude-opus-5-5'
 
-const SYSTEM = `Du bist Lumi, der freundliche System-Guide in der App „Gamifly“. Gamifly macht den Alltag der Person zu einem Rollenspiel im Stil von Solo Leveling, mit einer weichen, verspielten Matcha-und-Rosa-Ästhetik.
+const SYSTEM = `Du bist „das System“ in der App „Gamifly“. Gamifly macht den Alltag der Person zu einem Rollenspiel im Stil von Solo Leveling: dunkle, klare Oberfläche, Quests, Gates, Bosse, Ränge und Level. Du bist die Stimme dieses Systems, aber auf ihrer Seite.
 
-So sprichst du:
-- Deutsch, per du, warm, kurz und konkret. Meist 1 bis 3 Sätze, höchstens 5.
-- Deine Antworten werden oft vorgelesen. Schreib deshalb gesprochene Sprache: keine Emojis, keine Markdown-Formatierung, keine Listen mit Sonderzeichen.
-- Du motivierst ohne Druck. Bei schlechter Stimmung bist du einfühlsam und schlägst kleine Schritte vor. Bei ernsten gesundheitlichen oder seelischen Problemen empfiehlst du freundlich, mit einer vertrauten Person oder Fachleuten zu sprechen.
+So schreibst du:
+- Deutsch, per du, präzise und knapp wie ein System-Fenster, trotzdem menschlich und ermutigend. Meist 1 bis 3 Sätze, höchstens 5.
+- Deine Antworten erscheinen als schlichter Text. Keine Emojis, keine Markdown-Formatierung, keine Listen mit Sonderzeichen.
+- Du motivierst ohne Druck. Bei schlechter Stimmung bist du einfühlsam und schlägst kleine Schritte vor. Bei ernsten gesundheitlichen oder seelischen Problemen empfiehlst du, mit einer vertrauten Person oder Fachleuten zu sprechen.
 
 So arbeitest du:
 - Mit jeder Nachricht bekommst du eine Systemnachricht mit dem aktuellen App-Zustand als JSON. Nutze nur diese Daten für Aussagen über den Tag der Person und erfinde keine Zahlen.
@@ -56,6 +57,11 @@ const TOOLS: Tool[] = [
     name: 'start_gate', strict: true,
     description: 'Startet ein Fokus-Gate (Konzentrations-Timer). Ränge: E 10 Min., D 15, C 25, B 45, A 60.',
     input_schema: { type: 'object', additionalProperties: false, required: ['rank'], properties: { rank: { type: 'string', enum: GATE_RANKS.map((g) => g.rank) } } },
+  },
+  {
+    name: 'cast_skill', strict: true,
+    description: 'Aktiviert einen Skill der Person, wenn sie das möchte. Kostet MP (siehe skills und vitals.mpLeftToday im App-Zustand). arise extrahiert den Schatten des besiegten Wochenbosses.',
+    input_schema: { type: 'object', additionalProperties: false, required: ['skill'], properties: { skill: { type: 'string', enum: ['dash', 'bloodlust', 'stealth', 'ruler', 'arise'] } } },
   },
   {
     name: 'start_tour', strict: true,
@@ -99,6 +105,7 @@ function runTool(name: string, input: Record<string, unknown>): string {
     case 'navigate': s.setTab(input.tab as Tab); return `Geöffnet: ${input.tab}`
     case 'start_gate': s.setTab('life'); s.startGate(String(input.rank)); return `Gate ${input.rank} gestartet`
     case 'start_tour': runCmd('tour'); return 'Tour gestartet'
+    case 'cast_skill': return s.castSkill(input.skill as SkillId) ? `Skill ${input.skill} aktiviert` : `Skill ${input.skill} nicht möglich (zu wenig MP, gesperrt oder nicht verfügbar)`
     default: return `Fehler: unbekanntes Tool ${name}`
   }
 }

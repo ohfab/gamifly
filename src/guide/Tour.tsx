@@ -2,13 +2,12 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 import { useGame, type Tab } from '../store/useGame'
 import { Lumi } from '../companion/Lumi'
-import { speak, stopSpeaking } from '../companion/voice'
 import { sfx } from '../lib/sfx'
 
 interface Step { tab?: Tab; target?: string; title: string; text: string }
 
 const STEPS: Step[] = [
-  { tab: 'status', title: 'Willkommen, Player!', text: 'Ich bin Lumi, dein System-Guide. In einer Minute zeige ich dir, wie Gamifly funktioniert. Tippe auf Weiter.' },
+  { tab: 'status', title: 'Willkommen, Player!', text: 'Ich bin das System. In einer Minute zeige ich dir, wie Gamifly funktioniert. Tippe auf Weiter.' },
   { tab: 'status', target: 'status', title: 'Dein Status-Fenster', text: 'Hier siehst du Level, Rang, HP, MP und deine sechs Attribute. Sie wachsen, wenn du im echten Leben passende Dinge tust.' },
   { tab: 'status', target: 'daily', title: 'Die Daily Quest', text: 'Sechs kleine Aufgaben pro Tag. Schaffst du alle, wächst dein Streak. Verpasst du sie, landest du in der Strafzone. Halte den Haken gedrückt zum Abhaken.' },
   { tab: 'status', target: 'boss', title: 'Der Wochenboss', text: 'Jede Woche erscheint ein Boss. Alles, was du erledigst, macht ihm Schaden. Gegen seine Schwäche sogar doppelt.' },
@@ -20,7 +19,7 @@ const STEPS: Step[] = [
   { tab: 'life', target: 'gate', title: 'Fokus-Gates', text: 'Ein Gate ist ein Fokus-Timer. Halte durch und du bekommst XP und Loot. Verlässt du es früher, gibt es nichts.' },
   { tab: 'inventory', target: 'inventory', title: 'Inventar & Shop', text: 'Hier sind deine Items, deine Ausrüstung, der Shop mit echten Belohnungen, die Fusion und deine Erfolge.' },
   { target: 'nav', title: 'Navigation', text: 'Mit dieser Leiste wechselst du zwischen allen Bereichen.' },
-  { target: 'lumi', title: 'Und ich bin immer da', text: 'Du findest mich oben rechts. Tippe mich jederzeit an. Ich gebe dir dein Tagesbriefing, trage Dinge für dich ein und erkläre alles. Du kannst auch mit mir sprechen.' },
+  { target: 'lumi', title: 'Und ich bin immer da', text: 'Du findest mich oben rechts. Tippe mich jederzeit an. Ich gebe dir dein Tagesbriefing, trage Dinge für dich ein und erkläre alles. Per Mikrofon kannst du mir auch diktieren.' },
   { title: 'Bereit, Player?', text: 'Das war die Tour. Als Belohnung bekommst du einen Rosenquarz-Trank. Viel Spaß beim Leveln!' },
 ]
 
@@ -28,7 +27,6 @@ export function Tour() {
   const step = useGame((s) => s.tourStep)
   const setUi = useGame((s) => s.setUi)
   const setTab = useGame((s) => s.setTab)
-  const c = useGame((s) => s.companion)
   const [rect, setRect] = useState<DOMRect | null>(null)
   const cur = step != null ? STEPS[step] : null
 
@@ -57,7 +55,6 @@ export function Tour() {
       }
     }
     raf = requestAnimationFrame(find)
-    if (c.voice) speak(`${cur.title}. ${cur.text}`, { voiceURI: c.voiceURI, rate: c.rate, pitch: c.pitch })
     return () => cancelAnimationFrame(raf)
   }, [step])
 
@@ -72,7 +69,6 @@ export function Tour() {
   }, [step, measure])
 
   const finish = (done: boolean) => {
-    stopSpeaking()
     setUi({ tourStep: null })
     const s = useGame.getState()
     if (!s.tourDone) {

@@ -111,12 +111,11 @@ export default function Life() {
     return n
   }
 
-  const m = s.settings.theme === 'matcha'
   const chartMeta = {
-    steps: { color: m ? '#6b7d3a' : '#ff8fc7', goal: 6000, unit: 'Schritte', fmt: (v: number) => fmt(v) },
-    water: { color: m ? '#6f95b3' : '#7cc4ff', goal: 8, unit: 'Gläser', fmt: (v: number) => String(v) },
-    sleep: { color: m ? '#9a8bb8' : '#a98bff', goal: 8, unit: 'Stunden', fmt: (v: number) => v.toLocaleString('de-DE') },
-    workoutMin: { color: m ? '#d0705f' : '#ffad8f', goal: 15, unit: 'Min.', fmt: (v: number) => String(v) },
+    steps: { color: '#4cc9ff', goal: 6000, unit: 'Schritte', fmt: (v: number) => fmt(v) },
+    water: { color: '#5e9bff', goal: 8, unit: 'Gläser', fmt: (v: number) => String(v) },
+    sleep: { color: '#a98bff', goal: 8, unit: 'Stunden', fmt: (v: number) => v.toLocaleString('de-DE') },
+    workoutMin: { color: '#ff7a5c', goal: 15, unit: 'Min.', fmt: (v: number) => String(v) },
   }[chart]
 
   return (

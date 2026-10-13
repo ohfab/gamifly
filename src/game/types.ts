@@ -84,7 +84,11 @@ export interface DayLog {
   weight?: number
 }
 
-export type RoomKind = 'living' | 'kitchen' | 'bedroom' | 'bath' | 'hall'
+export type RoomKind = 'living' | 'kitchen' | 'bedroom' | 'bath' | 'hall' | 'office' | 'other'
+/** Room footprint in metres on the floor plan (x to the right, z downwards on the plan). */
+export interface RoomRect { x: number; z: number; w: number; d: number }
+/** An uploaded floor plan image with its scale (pixels per metre). */
+export interface FloorPlan { image?: string; ppm: number; imgW: number; imgH: number; show3d: boolean }
 
 export interface RoomItem { id: string; name: string; icon: string; where?: string }
 export interface Need { id: string; text: string; done: boolean }
@@ -95,6 +99,7 @@ export interface Room {
   lastCleaned: number
   items: RoomItem[]
   needs: Need[]
+  rect?: RoomRect
 }
 export type DeviceKind = 'light' | 'thermostat' | 'plug' | 'vacuum' | 'speaker' | 'blinds'
 export interface Device { id: string; roomId: string; name: string; kind: DeviceKind; on: boolean; value?: number }

@@ -33,6 +33,9 @@ export const ACHIEVEMENTS: Achievement[] = [
 ]
 
 ACHIEVEMENTS.push(
+  { id: 'a_shadow', name: 'Schattenmonarch', desc: 'Extrahiere deinen ersten Schatten.', icon: 'ach_shadow', title: 'Schattenmonarch', check: (s) => (s.stats.shadowsRaised ?? 0) >= 1 },
+  { id: 'a_redgate', name: 'Red-Gate-Überlebende', desc: 'Überlebe ein Red Gate.', icon: 'ach_redgate', title: 'Gate-Brecher', check: (s) => (s.stats.redGates ?? 0) >= 1 },
+  { id: 'a_skill', name: 'Skill-Meister', desc: 'Setze 10 Skills ein.', icon: 'ach_skill', check: (s) => (s.stats.skillsCast ?? 0) >= 10 },
   { id: 'a_boss', name: 'Bossbezwinger', desc: 'Besiege einen Wochenboss.', icon: 'ach_boss', title: 'Bossbezwinger', check: (s) => s.stats.bossesDefeated >= 1 },
   { id: 'a_gate', name: 'Gate-Läufer', desc: 'Schließe 5 Fokus-Gates ab.', icon: 'ach_gate', title: 'Gate-Läufer', check: (s) => s.stats.gatesCleared >= 5 },
   { id: 'a_job', name: 'Jobwechsel', desc: 'Wähle deine Klasse ab Level 10.', icon: 'ach_job', check: (s) => !!s.job },

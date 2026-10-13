@@ -16,18 +16,18 @@ export function render(shapes: Shape[], prefix = ''): ReactNode[] {
   return shapes.map((s, i) => createElement(s[0], { key: prefix + i, ...s[1] }, s[2] ? render(s[2], `${prefix}${i}-`) : undefined))
 }
 
-/** Matcha palette: olive, cream, blush, plus a few jewel tones for rarity and food. */
+/** System palette (Solo Leveling vibe): cold steel, electric blue, monarch violet, gate crimson and loot gold. */
 export const K = {
-  olive: '#6b7d3a', oliveD: '#4f5f27', sage: '#a9bb83', sageL: '#d2deb4', leaf: '#7fa04a', leafD: '#5d7c33',
-  cream: '#fbf3dc', creamD: '#eadcb4', white: '#fffdf7', ink: '#3b3326', inkL: '#6d6353',
-  blush: '#f3b7aa', rose: '#e47d6f', roseD: '#c35b4e', pink: '#f6a9c3', pinkD: '#de7ea0',
-  gold: '#ecb94e', goldD: '#c8902a', goldL: '#f8dd94',
-  sky: '#9cc4dd', skyD: '#6a9cc0', skyL: '#d6eaf5', water: '#7fb6e0',
-  lilac: '#bba7e0', lilacD: '#8f78c4', lilacL: '#e4daf6',
-  brown: '#bd8c5f', brownD: '#8a6240', brownL: '#dfba8e',
-  grey: '#d9d3c5', greyD: '#aaa295', greyL: '#eeeae0',
-  red: '#e2584f', redD: '#b8413a', orange: '#f2a24f', orangeD: '#d17f2c', yellow: '#f6d35b', yellowD: '#d9b237',
-  green: '#86bf5c', greenD: '#5f9a3b', night: '#3d3354', nightD: '#2a2340',
+  olive: '#3a6fd8', oliveD: '#244a9c', sage: '#5d8fd8', sageL: '#a8c4ec', leaf: '#45a6ff', leafD: '#2a6fc6',
+  cream: '#dce4f1', creamD: '#a9b6cc', white: '#f4f8ff', ink: '#0a0f1e', inkL: '#2b3754',
+  blush: '#d65a76', rose: '#e0405f', roseD: '#a3223f', pink: '#a985ff', pinkD: '#7c58ee',
+  gold: '#f2c14e', goldD: '#c58f22', goldL: '#fbe3a0',
+  sky: '#5ec8ff', skyD: '#2c8ad6', skyL: '#c3e8ff', water: '#4ab7ff',
+  lilac: '#9b7dff', lilacD: '#6545dc', lilacL: '#cdbfff',
+  brown: '#8b6c56', brownD: '#5b4436', brownL: '#b39478',
+  grey: '#8e98ae', greyD: '#5b6680', greyL: '#c6cedc',
+  red: '#ef3f5a', redD: '#b42640', orange: '#ff8f3d', orangeD: '#d0661f', yellow: '#ffd24d', yellowD: '#d9a92a',
+  green: '#3fd39a', greenD: '#21a072', night: '#1b2244', nightD: '#0e1430',
 }
 
 export const SH: Shape = E(32, 57, 17, 3.2, K.ink, { opacity: 0.1 })

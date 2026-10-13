@@ -1,4 +1,5 @@
-import { useGame, todayLog, vitals } from '../store/useGame'
+import { mpLeft, useGame, todayLog, vitals } from '../store/useGame'
+import { RED_GATE_TASKS, SHADOWS, SKILLS } from '../game/skills'
 import { BOSSES, GATE_RANKS, JOBS } from '../game/world'
 import { rankFor, xpToNext } from '../game/leveling'
 import { matchRecipes } from '../data/recipes'
@@ -18,10 +19,14 @@ export function snapshot() {
   return {
     date: new Date().toLocaleString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }),
     player: { name: s.player.name, level: s.player.level, rank: rankFor(s.player.level).rank, xp: s.player.xp, xpToNext: xpToNext(s.player.level), gold: s.player.gold, gems: s.player.gems, streak: s.player.streak, freeStatPoints: s.player.statPoints, title: s.player.title, job: JOBS.find((j) => j.id === s.job)?.name ?? null },
-    vitals: { hp: `${v.hp}/${v.maxHp}`, mp: `${v.mp}/${v.maxMp}` },
+    vitals: { hp: `${v.hp}/${v.maxHp}`, mpLeftToday: `${mpLeft(s)}/${v.maxMp}` },
+    skills: SKILLS.filter((k) => k.id !== 'arise').map((k) => ({ id: k.id, name: k.name, mp: k.mp, unlocked: s.player.level >= k.level })),
+    activeBuffs: s.skills.buffs,
+    shadows: s.shadows.map((sh) => ({ name: SHADOWS.find((x) => x.boss === sh.boss)?.name, rank: sh.rank + 1 })),
+    redGate: s.redGate ? { task: RED_GATE_TASKS.find((x) => x.id === s.redGate!.task)?.desc, minutesLeft: Math.max(0, Math.ceil((s.redGate.until - Date.now()) / 60000)), done: !!s.redGate.done } : null,
     today: { water: d.water, steps: d.steps, workoutMin: d.workoutMin, sleepHours: d.sleep ?? null, mood: d.mood ?? null, meditationMin: d.meditationMin, outfitLogged: !!s.wornLog[today], journal: !!s.journal[today], chestClaimed: s.chestDay === today },
     openQuests: s.quests.filter((q) => !q.done).map((q) => ({ id: q.id, title: q.title, type: q.type, manual: !q.target, progress: q.target ? `${q.progress ?? 0}/${q.target}` : undefined })),
-    boss: boss && s.boss ? { name: boss.name, hp: s.boss.hp, maxHp: s.boss.maxHp, weakness: boss.weakness, defeated: s.boss.defeated } : null,
+    boss: boss && s.boss ? { name: boss.name, hp: s.boss.hp, maxHp: s.boss.maxHp, weakness: boss.weakness, defeated: s.boss.defeated, shadowExtractable: s.boss.defeated && !s.boss.extracted && (s.boss.arise ?? 0) < 3 } : null,
     gate: s.gate ? { rank: s.gate.rank, minutesLeft: Math.max(0, Math.ceil((s.gate.start + s.gate.minutes * 60000 - Date.now()) / 60000)) } : null,
     rooms: s.home.rooms.map((r) => ({ name: r.name, cleanliness: cleanliness(r.lastCleaned), openNeeds: r.needs.filter((n) => !n.done).map((n) => n.text) })),
     fridge: s.home.fridge.map((f) => ({ name: f.name, qty: `${f.qty} ${f.unit}`, daysLeft: f.expires ? daysBetween(today, f.expires) : null })),

@@ -5,6 +5,7 @@ import { BOSSES } from '../game/world'
 import { Art } from '../art/Art'
 import { ColorBar } from './ui'
 import { fmt } from '../lib/util'
+import { AriseButton } from './Systems'
 
 function untilSunday() {
   const n = new Date()
@@ -44,7 +45,7 @@ export function BossCard() {
             <span className="tiny muted">{boss.defeated ? 'besiegt' : `noch ${untilSunday()}`}</span>
           </div>
           <b style={{ fontSize: 17, lineHeight: 1.15 }}>{b.name}</b>
-          <ColorBar value={boss.hp} max={boss.maxHp} color={pct > 0.5 ? '#dc7c6c' : pct > 0.2 ? '#ecb94e' : '#86bf5c'} />
+          <ColorBar value={boss.hp} max={boss.maxHp} color={pct > 0.5 ? '#ff3b5c' : pct > 0.2 ? '#f5c451' : '#3fe0b0'} />
           <div className="row between tiny">
             <span className="mono">{fmt(boss.hp)} / {fmt(boss.maxHp)} HP</span>
             <span className="muted">Schwäche: {b.weakness}</span>
@@ -53,6 +54,7 @@ export function BossCard() {
       </div>
       {!boss.defeated && <p className="tiny muted" style={{ margin: '10px 0 0' }}>{b.desc} Jede Quest, jedes Gate und jeder geputzte Raum macht Schaden.</p>}
       {boss.defeated && <p className="small" style={{ margin: '10px 0 0', fontWeight: 600 }}>Besiegt! Nächsten Montag erscheint ein neuer Boss.</p>}
+      <AriseButton />
     </div>
   )
 }

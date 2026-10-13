@@ -1,6 +1,6 @@
 import { type ArtDef, C, E, G, HL, K, L, P, R, SH, heart, spark } from './kit'
 
-const face = (bg: string, bgD: string, mouth: string, eyes: 'dot' | 'happy' | 'sad' | 'closed' = 'dot', blush = true): ArtDef => [SH,
+const face = (bg: string, bgD: string, mouth: string, eyes: 'dot' | 'happy' | 'sad' | 'closed' = 'dot', blush = false): ArtDef => [SH,
   C(32, 34, 21, bgD), C(32, 32, 21, bg),
   ...(eyes === 'dot' ? [C(25, 29, 2.6, K.ink), C(39, 29, 2.6, K.ink), C(26, 28, 0.9, '#fff'), C(40, 28, 0.9, '#fff')]
     : eyes === 'happy' ? [L('M22 30Q25 26 28 30', K.ink, 2.4), L('M36 30Q39 26 42 30', K.ink, 2.4)]
@@ -102,12 +102,14 @@ export const WORLD_ART: Record<string, ArtDef> = {
   hat: [SH, E(32, 42, 28, 9, K.creamD), P('M16 40Q16 14 32 14Q48 14 48 40Z', K.cream), R(16, 32, 32, 6, 0, K.rose), E(32, 42, 28, 9, 'none', { stroke: K.brownL, strokeWidth: 1.5 })],
   necklace: [SH, L('M10 12Q32 54 54 12', K.creamD, 1.4), ...Array.from({ length: 11 }, (_, i) => { const t = i / 10; const x = (1 - t) ** 2 * 10 + 2 * t * (1 - t) * 32 + t * t * 54; const y = 12 + 84 * t * (1 - t); return C(x, y, 3.8, K.cream, { stroke: K.creamD, strokeWidth: 1.4 }) }), C(32, 46, 5, K.gold)],
 
+  desk: [SH, R(8, 28, 48, 6, 2, K.brown), R(10, 34, 4, 20, 1, K.brownD), R(50, 34, 4, 20, 1, K.brownD), R(19, 9, 26, 17, 2, K.ink), R(21, 11, 22, 13, 1, K.sky), R(30, 26, 4, 3, 0, K.greyD), R(25, 28.5, 14, 2, 1, K.greyD), spark(38, 15, 2.5, K.white)],
+  blueprint: [SH, R(8, 10, 48, 42, 3, K.skyD), R(8, 10, 48, 42, 3, 'none', { stroke: K.skyL, strokeWidth: 1.5 }), L('M14 18H34V30H44V44H14Z', K.white, 2), L('M34 30V44M24 18V30M14 36H22', K.skyL, 1.5), C(48, 17, 3, K.gold)],
   // ---------- moods ----------
-  mood1: face('#e9a296', '#cf8173', 'M24 44Q32 37 40 44', 'sad'),
-  mood2: face('#f1c39a', '#d9a675', 'M25 42H39', 'dot'),
+  mood1: face('#c45a6c', '#9a3d50', 'M24 44Q32 37 40 44', 'sad'),
+  mood2: face('#c49a6a', '#9a7448', 'M25 42H39', 'dot'),
   mood3: face(K.creamD, '#d4c495', 'M25 40Q32 45 39 40', 'dot'),
   mood4: face(K.sageL, K.sage, 'M23 39Q32 48 41 39', 'happy'),
-  mood5: [...face(K.pink, K.pinkD, 'M22 38Q32 50 42 38Z', 'happy'), P(heart(14, 14, 0.4), K.rose), P(heart(52, 12, 0.3), K.rose)],
+  mood5: [...face(K.sky, K.skyD, 'M22 38Q32 50 42 38Z', 'happy'), spark(13, 13, 5, K.white), spark(52, 11, 4, K.skyL)],
 
   // ---------- weather & occasions ----------
   sun: [SH, ...Array.from({ length: 8 }, (_, i) => G(`rotate(${i * 45} 32 32)`, [R(30, 4, 4, 9, 2, K.gold)])), C(32, 32, 14, K.gold), C(32, 32, 10, K.goldL)],

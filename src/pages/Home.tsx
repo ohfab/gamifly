@@ -1,6 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Lightbulb, Moon, Plus, Power, RotateCcw, ShoppingCart, Sun, Thermometer, Trash2, Check } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { Lightbulb, Maximize2, Minimize2, Moon, PencilRuler, Plus, Power, RotateCcw, ShoppingCart, Sun, Thermometer, Trash2, Check } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
+import FloorPlanEditor from '../components/FloorPlanEditor'
 import { useGame } from '../store/useGame'
 import { Apartment, type ApartmentHandle } from '../scene/Apartment'
 import { ROOM_ICON } from '../data/home'
@@ -229,12 +231,27 @@ function FridgeSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
   )
 }
 
+const ACCENT = { system: '#4cc9ff', monarch: '#a98bff', crimson: '#ff5470' } as const
+
+/** Renders inline, or into a fullscreen layer on top of everything ("3D erkunden"). */
+function Stage({ full, children }: { full: boolean; children: ReactNode }) {
+  useEffect(() => {
+    if (!full) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [full])
+  return full ? createPortal(<div className="home-fullscreen">{children}</div>, document.body) : <>{children}</>
+}
+
 export default function Home() {
   const s = useGame()
   const [selected, setSelected] = useState<string | null>(null)
   const fridge = useGame((st) => st.fridgeOpen)
   const setFridge = (v: boolean) => useGame.getState().setUi({ fridgeOpen: v })
-  const [nightScene, setNightScene] = useState(s.settings.theme === 'night')
+  const [nightScene, setNightScene] = useState(false)
+  const [full, setFull] = useState(false)
+  const [editor, setEditor] = useState(false)
   const apt = useRef<ApartmentHandle>(null)
   const labels = useRef<HTMLDivElement>(null)
   const room = s.home.rooms.find((r) => r.id === selected)
@@ -252,19 +269,28 @@ export default function Home() {
         </div>
       </div>
       <div className="home-layout">
-        <div className="canvas-wrap home-canvas" data-tour="home3d">
-          <Apartment ref={apt} rooms={s.home.rooms} devices={s.home.devices} selected={selected} onSelect={select} onToggle={s.toggleDevice} onFridge={() => setFridge(true)} onWardrobe={() => s.setTab('style')} fridgeWarn={fridgeWarn} night={nightScene} cleanliness={cleanliness} portal={labels} theme={s.settings.theme} />
-          <div ref={labels} className="labels-layer" />
-          <div className="fab-row" style={{ top: 12, right: 12 }}>
-            <button className="btn ghost icon" onClick={() => setNightScene(!nightScene)} aria-label="Tag/Nacht">{nightScene ? <Sun size={18} /> : <Moon size={18} />}</button>
-            <button className="btn ghost icon" onClick={() => select(null)} aria-label="Ansicht zurücksetzen"><RotateCcw size={18} /></button>
+        <Stage full={full}>
+          <div className={`canvas-wrap home-canvas ${full ? 'is-full' : ''}`} data-tour="home3d">
+            <Apartment ref={apt} rooms={s.home.rooms} devices={s.home.devices} plan={s.home.plan} selected={selected} onSelect={select} onToggle={s.toggleDevice}
+              onFridge={() => setFridge(true)} onWardrobe={() => s.setTab('style')} fridgeWarn={fridgeWarn} night={nightScene} cleanliness={cleanliness} portal={labels}
+              accent={ACCENT[s.settings.theme] ?? ACCENT.system} immersive={full} />
+            <div ref={labels} className="labels-layer" />
+            <div className="fab-row" style={{ top: 12, right: 12, flexDirection: 'column' }}>
+              <button className="btn ghost icon" onClick={() => setFull(!full)} aria-label={full ? 'Vollbild verlassen' : '3D erkunden'} title="3D erkunden">{full ? <Minimize2 size={18} /> : <Maximize2 size={18} />}</button>
+              <button className="btn ghost icon" onClick={() => setEditor(true)} aria-label="Grundriss bearbeiten" title="Grundriss / Bauplan"><PencilRuler size={18} /></button>
+              <button className="btn ghost icon" onClick={() => setNightScene(!nightScene)} aria-label="Tag/Nacht">{nightScene ? <Sun size={18} /> : <Moon size={18} />}</button>
+              <button className="btn ghost icon" onClick={() => select(null)} aria-label="Ansicht zurücksetzen"><RotateCcw size={18} /></button>
+            </div>
+            <div className="fab-row" style={{ left: 12, bottom: 12, flexWrap: 'wrap', right: 64 }}>
+              <span className="pill"><Art name="bulb" size={14} /> {lightsOn} an</span>
+              <span className="pill"><Art name="sparkle" size={14} /> {openNeeds} To-dos</span>
+              <button className="pill" onClick={() => setFridge(true)} data-tour="fridge"><Art name="fridge" size={14} /> {s.home.fridge.length} im Kühlschrank{fridgeWarn ? ' · bald ablaufend' : ''}</button>
+            </div>
+            <div className="home-hint tiny mono">{full ? 'ZIEHEN DREHT · PINCH / MAUSRAD ZOOMT · ZWEI FINGER VERSCHIEBEN' : 'SEITLICH WISCHEN DREHT · ⤢ FÜR VOLLE STEUERUNG'}</div>
           </div>
-          <div className="fab-row" style={{ left: 12, bottom: 12 }}>
-            <span className="pill"><Art name="bulb" size={14} /> {lightsOn} an</span>
-            <span className="pill"><Art name="sparkle" size={14} /> {openNeeds} To-dos</span>
-            <button className="pill" onClick={() => setFridge(true)} data-tour="fridge"><Art name="fridge" size={14} /> {s.home.fridge.length} im Kühlschrank{fridgeWarn ? ' · bald ablaufend' : ''}</button>
-          </div>
-        </div>
+        </Stage>
+        {full && <div className="canvas-wrap home-canvas" />}
+        <FloorPlanEditor open={editor} onClose={() => setEditor(false)} />
         <div className="home-panel">
           <AnimatePresence mode="wait">
             {room ? (

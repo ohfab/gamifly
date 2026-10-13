@@ -10,7 +10,7 @@ export const ITEMS: ItemDef[] = [
   { id: 'gem_shard', name: 'Kristallsplitter', desc: '+3 Kristalle.', icon: 'gem_shard', rarity: 'uncommon', type: 'consumable', effect: { kind: 'gems', amount: 3 } },
   { id: 'stat_elixir', name: 'Sternenstaub', desc: '+1 freier Statuspunkt.', icon: 'stardust', rarity: 'epic', type: 'consumable', effect: { kind: 'statPoint', amount: 1 }, gemPrice: 8 },
   { id: 'streak_shield', name: 'Schleifen-Schild', desc: 'Schützt deinen Streak einmal vor der Strafzone. Wirkt automatisch.', icon: 'shield_bow', rarity: 'rare', type: 'consumable', effect: { kind: 'streakShield' }, price: 450 },
-  { id: 'box_common', name: 'Pastell-Box', desc: 'Zufälliges Item (gewöhnlich bis selten).', icon: 'box_pastel', rarity: 'uncommon', type: 'consumable', effect: { kind: 'mystery', tier: 1 }, price: 200 },
+  { id: 'box_common', name: 'System-Box', desc: 'Zufälliges Item (gewöhnlich bis selten).', icon: 'box_pastel', rarity: 'uncommon', type: 'consumable', effect: { kind: 'mystery', tier: 1 }, price: 200 },
   { id: 'box_rare', name: 'Holo-Box', desc: 'Zufälliges Item (selten bis legendär).', icon: 'box_holo', rarity: 'epic', type: 'consumable', effect: { kind: 'mystery', tier: 2 }, gemPrice: 10 },
   { id: 'box_daily', name: 'Tägliche Kiste', desc: 'Belohnung für alle Daily Quests.', icon: 'box_daily', rarity: 'rare', type: 'consumable', effect: { kind: 'mystery', tier: 1 } },
 

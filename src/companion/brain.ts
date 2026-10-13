@@ -1,5 +1,7 @@
 import { useGame, todayLog } from '../store/useGame'
 import { BOSSES } from '../game/world'
+import { SKILLS } from '../game/skills'
+import { mpLeft } from '../store/useGame'
 import { TOPICS } from '../guide/topics'
 import { suggest } from '../lib/style'
 import { dayKey } from '../lib/util'
@@ -41,7 +43,7 @@ export function think(raw: string): Reply {
     return { text: `Hey ${name}! Schön, dass du da bist. Soll ich dir dein Tagesbriefing geben oder sagen, was als Nächstes dran ist?`, actions: QUICK, mood: 'happy' }
   }
   if (/^(danke|dankeschön|thx|merci|cool|super|nice|perfekt)\b/.test(t)) return { text: 'Sehr gern! Ich bin hier, wann immer du mich brauchst.', mood: 'happy' }
-  if (/wer bist du|wie heißt du|was bist du/.test(t)) return { text: 'Ich bin Lumi, dein System-Guide. Ich kenne jede Ecke von Gamifly, erinnere dich an Quests und feiere deine Erfolge mit dir.', actions: [{ label: 'Guide-Tour', cmd: 'tour' }, { label: 'Handbuch', cmd: 'guide:start' }], mood: 'happy' }
+  if (/wer bist du|wie heißt du|was bist du/.test(t)) return { text: 'Ich bin das System. Ich kenne jede Ecke von Gamifly, erinnere dich an Quests und feiere deine Erfolge mit dir.', actions: [{ label: 'Guide-Tour', cmd: 'tour' }, { label: 'Handbuch', cmd: 'guide:start' }], mood: 'happy' }
   if (/witz|lustig|bring mich zum lachen/.test(t)) return { text: JOKES[Math.floor(Math.random() * JOKES.length)], mood: 'happy' }
   if (/tour|führung|zeig mir alles|einführung|tutorial|erklär mir die app/.test(t)) return { text: 'Los geht’s! Ich zeige dir Schritt für Schritt, wo alles ist.', actions: [{ label: 'Tour starten', cmd: 'tour' }], mood: 'happy' }
   if (/handbuch|anleitung|hilfe$|^hilfe/.test(t)) return { text: 'Im Handbuch findest du alle Systeme erklärt. Oder frag mich einfach direkt, zum Beispiel: Was ist ein Fokus-Gate?', actions: [{ label: 'Handbuch öffnen', cmd: 'guide:start' }] }
@@ -125,6 +127,14 @@ export function think(raw: string): Reply {
   }
 
   // ---------- game systems ----------
+  if (/(aktivier|nutze|benutz|wirk|zaub|cast|setz).*(sprint|blutrausch|tarnung|autorität|herrscher|skill)|^(sprint|blutrausch|tarnung)$/.test(t)) {
+    const sk = SKILLS.find((k) => t.includes(k.name.toLowerCase().split('-')[0]))
+    if (sk) return { text: `${sk.name} kostet ${sk.mp} MP, du hast ${mpLeft(s)} MP. ${sk.desc}`, actions: [{ label: `${sk.name} aktivieren`, cmd: `skill:${sk.id}` }] }
+    return { text: `Du hast ${mpLeft(s)} MP. Welchen Skill willst du einsetzen?`, actions: SKILLS.filter((k) => k.id !== 'arise' && s.player.level >= k.level).map((k) => ({ label: `${k.name} · ${k.mp} MP`, cmd: `skill:${k.id}` })) }
+  }
+  if (/red ?gate/.test(t) && !/was ist/.test(t)) {
+    return { text: s.redGate ? 'Ein Red Gate ist offen! Schau oben im Status-Fenster, was zu tun ist, bevor die Zeit abläuft.' : 'Gerade ist kein Red Gate offen. Sie erscheinen ohne Vorwarnung, bleib wachsam.', actions: [{ label: 'Zum Status', cmd: 'tab:status' }] }
+  }
   if (/boss/.test(t) && !/was ist/.test(t) && s.boss) {
     const b = BOSSES[s.boss.idx]
     return { text: s.boss.defeated ? `${b.name} ist besiegt! Ab Montag wartet ein neuer Gegner.` : `${b.name} hat noch ${s.boss.hp} von ${s.boss.maxHp} HP. Seine Schwäche: ${b.weakness}. Damit machst du doppelten Schaden.`, actions: [{ label: 'Zum Boss', cmd: 'tab:status' }] }
