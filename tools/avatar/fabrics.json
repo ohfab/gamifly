@@ -1,0 +1,16 @@
+{
+  "jersey": "cotton_jersey",
+  "melange": "jogging_melange",
+  "poplin": "stretch_poplin",
+  "knit": "knitted_fleece",
+  "denim": "denim_fabric_03",
+  "wool": "poly_wool_herringbone",
+  "satin": "crepe_satin",
+  "georgette": "crepe_georgette",
+  "leather": "leather_white",
+  "boucle": "wool_boucle",
+  "linen": "rough_linen",
+  "velvet": "velour_velvet",
+  "corduroy": "ribbed_corduroy",
+  "scuba": "scuba_suede"
+}

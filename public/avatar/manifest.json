@@ -1,0 +1,780 @@
+{
+ "version": 1,
+ "morphs": [
+  "masculine",
+  "heavier",
+  "slimmer",
+  "muscular",
+  "taller",
+  "shorter",
+  "bust",
+  "flat"
+ ],
+ "skins": [
+  {
+   "id": "porcelain",
+   "label": "Porzellan",
+   "f": "tex/skin_porcelain_f.jpg",
+   "m": "tex/skin_porcelain_m.jpg",
+   "swatch": "#d4a88d"
+  },
+  {
+   "id": "warm",
+   "label": "Warm",
+   "f": "tex/skin_warm_f.jpg",
+   "m": "tex/skin_warm_m.jpg",
+   "swatch": "#d5a58a"
+  },
+  {
+   "id": "olive",
+   "label": "Oliv",
+   "f": "tex/skin_olive_f.jpg",
+   "m": "tex/skin_olive_m.jpg",
+   "swatch": "#d7a989"
+  },
+  {
+   "id": "deep",
+   "label": "Tief",
+   "f": "tex/skin_deep_f.jpg",
+   "m": "tex/skin_deep_m.jpg",
+   "swatch": "#6a3f2d"
+  }
+ ],
+ "eyes": [
+  {
+   "id": "brown",
+   "tex": "tex/eye_brown.jpg",
+   "swatch": "#a49e96"
+  },
+  {
+   "id": "brownlight",
+   "tex": "tex/eye_brownlight.jpg",
+   "swatch": "#a49e96"
+  },
+  {
+   "id": "green",
+   "tex": "tex/eye_green.jpg",
+   "swatch": "#a49e96"
+  },
+  {
+   "id": "bluegreen",
+   "tex": "tex/eye_bluegreen.jpg",
+   "swatch": "#a49e96"
+  },
+  {
+   "id": "blue",
+   "tex": "tex/eye_blue.jpg",
+   "swatch": "#a49e96"
+  },
+  {
+   "id": "lightblue",
+   "tex": "tex/eye_lightblue.jpg",
+   "swatch": "#a49e96"
+  },
+  {
+   "id": "deepblue",
+   "tex": "tex/eye_deepblue.jpg",
+   "swatch": "#a49e96"
+  },
+  {
+   "id": "grey",
+   "tex": "tex/eye_grey.jpg",
+   "swatch": "#a49e96"
+  },
+  {
+   "id": "ice",
+   "tex": "tex/eye_ice.jpg",
+   "swatch": "#a49e96"
+  }
+ ],
+ "hair": [
+  {
+   "id": "long01",
+   "label": "Lang glatt",
+   "mesh": "p/hair_long01",
+   "tex": "tex/hair_long01.webp",
+   "gain": 2.269,
+   "sway": true
+  },
+  {
+   "id": "bob01",
+   "label": "Bob",
+   "mesh": "p/hair_bob01",
+   "tex": "tex/hair_bob01.webp",
+   "gain": 2.382,
+   "sway": false
+  },
+  {
+   "id": "bob02",
+   "label": "Bob kurz",
+   "mesh": "p/hair_bob02",
+   "tex": "tex/hair_bob02.webp",
+   "gain": 2.589,
+   "sway": false
+  },
+  {
+   "id": "ponytail01",
+   "label": "Pferdeschwanz",
+   "mesh": "p/hair_ponytail01",
+   "tex": "tex/hair_ponytail01.webp",
+   "gain": 2.495,
+   "sway": true
+  },
+  {
+   "id": "braid01",
+   "label": "Zopf",
+   "mesh": "p/hair_braid01",
+   "tex": "tex/hair_braid01.webp",
+   "gain": 3.174,
+   "sway": true
+  },
+  {
+   "id": "short02",
+   "label": "Kurz",
+   "mesh": "p/hair_short02",
+   "tex": "tex/hair_short02.webp",
+   "gain": 2.747,
+   "sway": false
+  },
+  {
+   "id": "short01",
+   "label": "Kurz texturiert",
+   "mesh": "p/hair_short01",
+   "tex": "tex/hair_short01.webp",
+   "gain": 2.563,
+   "sway": false
+  },
+  {
+   "id": "short04",
+   "label": "Buzz",
+   "mesh": "p/hair_short04",
+   "tex": "tex/hair_short04.webp",
+   "gain": 2.641,
+   "sway": false
+  },
+  {
+   "id": "afro01",
+   "label": "Afro",
+   "mesh": "p/hair_afro01",
+   "tex": "tex/hair_afro01.webp",
+   "gain": 2.921,
+   "sway": false
+  }
+ ],
+ "brows": [
+  {
+   "id": "eyebrow001",
+   "mesh": "p/eyebrow001",
+   "tex": "tex/eyebrow001.webp",
+   "gain": 3.034
+  },
+  {
+   "id": "eyebrow006",
+   "mesh": "p/eyebrow006",
+   "tex": "tex/eyebrow006.webp",
+   "gain": 3.798
+  },
+  {
+   "id": "eyebrow010",
+   "mesh": "p/eyebrow010",
+   "tex": "tex/eyebrow010.webp",
+   "gain": 3.798
+  },
+  {
+   "id": "eyebrow012",
+   "mesh": "p/eyebrow012",
+   "tex": "tex/eyebrow012.webp",
+   "gain": 3.798
+  }
+ ],
+ "lashes": [
+  {
+   "id": "eyelashes02",
+   "mesh": "p/eyelashes02",
+   "tex": "tex/eyelashes02.webp",
+   "gain": 9.952
+  },
+  {
+   "id": "eyelashes03",
+   "mesh": "p/eyelashes03",
+   "tex": "tex/eyelashes03.webp",
+   "gain": 9.952
+  }
+ ],
+ "garments": [
+  {
+   "id": "tee",
+   "label": "T-Shirt",
+   "slot": "top",
+   "mesh": "p/g_tee",
+   "fabric": "jersey",
+   "layer": 2,
+   "sway": false,
+   "minY": 0.8665,
+   "maxY": 1.3529,
+   "uvScale": 1.188,
+   "ao": "tex/g_tee_ao.jpg",
+   "normal": "tex/g_tee_n.jpg"
+  },
+  {
+   "id": "jeans",
+   "label": "Jeans",
+   "slot": "bottom",
+   "mesh": "p/g_jeans",
+   "fabric": "denim",
+   "layer": 1,
+   "sway": false,
+   "minY": 0.0783,
+   "maxY": 0.9045,
+   "uvScale": 1.529,
+   "ao": "tex/g_jeans_ao.jpg",
+   "normal": "tex/g_jeans_n.jpg",
+   "detail": "tex/g_jeans_d.jpg",
+   "detailGain": 1.739
+  },
+  {
+   "id": "shorts",
+   "label": "Shorts",
+   "slot": "bottom",
+   "mesh": "p/g_shorts",
+   "fabric": "denim",
+   "layer": 1,
+   "sway": false,
+   "minY": 0.6781,
+   "maxY": 0.9055,
+   "uvScale": 0.907,
+   "ao": "tex/g_shorts_ao.jpg",
+   "normal": "tex/g_shorts_n.jpg",
+   "detail": "tex/g_shorts_d.jpg",
+   "detailGain": 1.812
+  },
+  {
+   "id": "blouse",
+   "label": "Bluse",
+   "slot": "top",
+   "mesh": "p/g_blouse",
+   "fabric": "georgette",
+   "layer": 2,
+   "sway": false,
+   "minY": 0.8786,
+   "maxY": 1.3684,
+   "uvScale": 1.416,
+   "ao": "tex/g_blouse_ao.jpg",
+   "normal": "tex/g_blouse_n.jpg"
+  },
+  {
+   "id": "pencil",
+   "label": "Bleistiftrock",
+   "slot": "bottom",
+   "mesh": "p/g_pencil",
+   "fabric": "wool",
+   "layer": 1,
+   "sway": false,
+   "minY": 0.5319,
+   "maxY": 0.9468,
+   "uvScale": 1.304,
+   "ao": "tex/g_skirt_ao.jpg",
+   "normal": "tex/g_skirt_n.jpg"
+  },
+  {
+   "id": "skirt",
+   "label": "A-Linien-Rock",
+   "slot": "bottom",
+   "mesh": "p/g_skirt",
+   "fabric": "satin",
+   "layer": 1,
+   "sway": true,
+   "minY": 0.5647,
+   "maxY": 0.9468,
+   "uvScale": 1.377,
+   "ao": "tex/g_skirt_ao.jpg",
+   "normal": "tex/g_skirt_n.jpg"
+  },
+  {
+   "id": "crop",
+   "label": "Crop-Top",
+   "slot": "top",
+   "mesh": "p/g_crop",
+   "fabric": "scuba",
+   "layer": 2,
+   "sway": false,
+   "minY": 1.0949,
+   "maxY": 1.3529,
+   "uvScale": 1.259,
+   "ao": "tex/g_crop_ao.jpg",
+   "normal": "tex/g_crop_n.jpg"
+  },
+  {
+   "id": "leggings",
+   "label": "Leggings",
+   "slot": "bottom",
+   "mesh": "p/g_leggings",
+   "fabric": "scuba",
+   "layer": 1,
+   "sway": false,
+   "minY": 0.0783,
+   "maxY": 0.9092,
+   "uvScale": 1.53,
+   "ao": "tex/g_leggings_ao.jpg",
+   "normal": "tex/g_leggings_n.jpg"
+  },
+  {
+   "id": "base_top",
+   "label": "Basis-Top",
+   "slot": "base_top",
+   "mesh": "p/g_base_top",
+   "fabric": "scuba",
+   "layer": 0,
+   "sway": false,
+   "minY": 1.0949,
+   "maxY": 1.3529,
+   "uvScale": 1.259,
+   "ao": "tex/g_crop_ao.jpg",
+   "normal": "tex/g_crop_n.jpg"
+  },
+  {
+   "id": "base_bottom",
+   "label": "Basis-Shorts",
+   "slot": "base_bottom",
+   "mesh": "p/g_base_bottom",
+   "fabric": "scuba",
+   "layer": 0,
+   "sway": false,
+   "minY": 0.6619,
+   "maxY": 0.9092,
+   "uvScale": 1.713,
+   "ao": "tex/g_leggings_ao.jpg",
+   "normal": "tex/g_leggings_n.jpg"
+  },
+  {
+   "id": "longsleeve",
+   "label": "Longsleeve",
+   "slot": "top",
+   "mesh": "p/g_longsleeve",
+   "fabric": "melange",
+   "layer": 2,
+   "sway": false,
+   "minY": 0.7873,
+   "maxY": 1.374,
+   "uvScale": 1.587,
+   "ao": "tex/g_longsleeve_ao.jpg",
+   "normal": "tex/g_longsleeve_n.jpg"
+  },
+  {
+   "id": "shirt",
+   "label": "Hemd",
+   "slot": "top",
+   "mesh": "p/g_shirt",
+   "fabric": "poplin",
+   "layer": 2,
+   "sway": false,
+   "minY": 0.819,
+   "maxY": 1.3917,
+   "uvScale": 1.571,
+   "ao": "tex/g_shirt_ao.jpg",
+   "normal": "tex/g_shirt_n.jpg"
+  },
+  {
+   "id": "tee_loose",
+   "label": "T-Shirt weit",
+   "slot": "top",
+   "mesh": "p/g_tee_loose",
+   "fabric": "jersey",
+   "layer": 2,
+   "sway": false,
+   "minY": 0.8498,
+   "maxY": 1.374,
+   "uvScale": 1.599,
+   "ao": "tex/g_tee_loose_ao.jpg",
+   "normal": "tex/g_tee_loose_n.jpg"
+  },
+  {
+   "id": "jacket",
+   "label": "Jacke",
+   "slot": "outer",
+   "mesh": "p/g_jacket",
+   "fabric": "scuba",
+   "layer": 3,
+   "sway": false,
+   "minY": 0.7599,
+   "maxY": 1.3955,
+   "uvScale": 2.122,
+   "ao": "tex/g_jacket_ao.jpg",
+   "normal": "tex/g_jacket_n.jpg"
+  },
+  {
+   "id": "coat",
+   "label": "Mantel",
+   "slot": "outer",
+   "mesh": "p/g_coat",
+   "fabric": "wool",
+   "layer": 3,
+   "sway": true,
+   "minY": 0.5917,
+   "maxY": 1.3955,
+   "uvScale": 2.343,
+   "ao": "tex/g_jacket_ao.jpg",
+   "normal": "tex/g_jacket_n.jpg"
+  },
+  {
+   "id": "blazer",
+   "label": "Anzug-Sakko",
+   "slot": "outer",
+   "mesh": "p/g_blazer",
+   "fabric": "wool",
+   "layer": 3,
+   "sway": false,
+   "minY": 0.7499,
+   "maxY": 1.399,
+   "uvScale": 1.759,
+   "detail": "tex/g_blazer_d.jpg",
+   "detailGain": 2.184
+  },
+  {
+   "id": "trousers",
+   "label": "Stoffhose",
+   "slot": "bottom",
+   "mesh": "p/g_trousers",
+   "fabric": "wool",
+   "layer": 1,
+   "sway": false,
+   "minY": 0.0466,
+   "maxY": 0.9492,
+   "uvScale": 1.84,
+   "detail": "tex/g_trousers_d.jpg",
+   "detailGain": 1.594
+  },
+  {
+   "id": "dress_bodice",
+   "label": "Kleid (Oberteil)",
+   "slot": "dress_part",
+   "mesh": "p/g_dress_bodice",
+   "fabric": "satin",
+   "layer": 2,
+   "sway": false,
+   "minY": 0.8665,
+   "maxY": 1.3529,
+   "uvScale": 1.188,
+   "ao": "tex/g_tee_ao.jpg",
+   "normal": "tex/g_tee_n.jpg"
+  },
+  {
+   "id": "dress_skirt",
+   "label": "Kleid (Rock)",
+   "slot": "dress_part",
+   "mesh": "p/g_dress_skirt",
+   "fabric": "satin",
+   "layer": 1,
+   "sway": true,
+   "minY": 0.4399,
+   "maxY": 0.9468,
+   "uvScale": 1.642,
+   "ao": "tex/g_skirt_ao.jpg",
+   "normal": "tex/g_skirt_n.jpg"
+  },
+  {
+   "id": "shoes06",
+   "label": "Sneaker",
+   "slot": "shoes",
+   "mesh": "p/g_shoes06",
+   "fabric": "leather",
+   "layer": 1,
+   "sway": false,
+   "minY": -0.0102,
+   "maxY": 0.0994,
+   "uvScale": 0.332,
+   "detail": "tex/g_shoes06_d.jpg",
+   "detailGain": 2.532,
+   "lift": 0.0105,
+   "sock": "p/g_shoes06_sock"
+  },
+  {
+   "id": "shoes05",
+   "label": "Sneaker hell",
+   "slot": "shoes",
+   "mesh": "p/g_shoes05",
+   "fabric": "leather",
+   "layer": 1,
+   "sway": false,
+   "minY": -0.0102,
+   "maxY": 0.0994,
+   "uvScale": 0.332,
+   "detail": "tex/g_shoes05_d.jpg",
+   "detailGain": 2.276,
+   "lift": 0.0105,
+   "sock": "p/g_shoes05_sock"
+  },
+  {
+   "id": "shoes02",
+   "label": "Runner",
+   "slot": "shoes",
+   "mesh": "p/g_shoes02",
+   "fabric": "leather",
+   "layer": 1,
+   "sway": false,
+   "minY": -0.0102,
+   "maxY": 0.0994,
+   "uvScale": 0.332,
+   "detail": "tex/g_shoes02_d.jpg",
+   "detailGain": 1.754,
+   "lift": 0.0105,
+   "sock": "p/g_shoes02_sock"
+  },
+  {
+   "id": "shoes03",
+   "label": "Boots",
+   "slot": "shoes",
+   "mesh": "p/g_shoes03",
+   "fabric": "leather",
+   "layer": 1,
+   "sway": false,
+   "minY": -0.0176,
+   "maxY": 0.0902,
+   "uvScale": 0.436,
+   "detail": "tex/g_shoes03_d.jpg",
+   "detailGain": 2.201,
+   "lift": 0.0181,
+   "sock": "p/g_shoes03_sock"
+  },
+  {
+   "id": "shoes01",
+   "label": "Derby",
+   "slot": "shoes",
+   "mesh": "p/g_shoes01",
+   "fabric": "leather",
+   "layer": 1,
+   "sway": false,
+   "minY": 0.0019,
+   "maxY": 0.1024,
+   "uvScale": 0.295,
+   "normal": "tex/g_shoes01_n.jpg",
+   "detail": "tex/g_shoes01_d.jpg",
+   "detailGain": 1.672,
+   "lift": 0.0,
+   "sock": "p/g_shoes01_sock"
+  },
+  {
+   "id": "shoes04",
+   "label": "Loafer",
+   "slot": "shoes",
+   "mesh": "p/g_shoes04",
+   "fabric": "leather",
+   "layer": 1,
+   "sway": false,
+   "minY": 0.0019,
+   "maxY": 0.1024,
+   "uvScale": 0.295,
+   "normal": "tex/g_shoes04_n.jpg",
+   "detail": "tex/g_shoes04_d.jpg",
+   "detailGain": 1.732,
+   "lift": 0.0,
+   "sock": "p/g_shoes04_sock"
+  },
+  {
+   "id": "fedora",
+   "label": "Fedora",
+   "slot": "hat",
+   "mesh": "p/g_fedora",
+   "fabric": "wool",
+   "layer": 4,
+   "sway": false,
+   "minY": 1.5165,
+   "maxY": 1.6183,
+   "uvScale": 0.336,
+   "normal": "tex/g_fedora_n.jpg",
+   "detail": "tex/g_fedora_d.jpg",
+   "detailGain": 1.702
+  }
+ ],
+ "fabrics": [
+  {
+   "id": "jersey",
+   "label": "Jersey",
+   "d": "tex/fab_jersey_d.jpg",
+   "n": "tex/fab_jersey_n.jpg",
+   "r": "tex/fab_jersey_r.jpg",
+   "gain": 1.655,
+   "roughness": 1.0,
+   "sheen": 0.35,
+   "clearcoat": 0.0,
+   "tile": 0.26
+  },
+  {
+   "id": "melange",
+   "label": "Melange",
+   "d": "tex/fab_melange_d.jpg",
+   "n": "tex/fab_melange_n.jpg",
+   "r": "tex/fab_melange_r.jpg",
+   "gain": 1.646,
+   "roughness": 1.0,
+   "sheen": 0.4,
+   "clearcoat": 0.0,
+   "tile": 0.27
+  },
+  {
+   "id": "poplin",
+   "label": "Popeline",
+   "d": "tex/fab_poplin_d.jpg",
+   "n": "tex/fab_poplin_n.jpg",
+   "r": "tex/fab_poplin_r.jpg",
+   "gain": 1.656,
+   "roughness": 0.9,
+   "sheen": 0.15,
+   "clearcoat": 0.0,
+   "tile": 0.29
+  },
+  {
+   "id": "knit",
+   "label": "Strick",
+   "d": "tex/fab_knit_d.jpg",
+   "n": "tex/fab_knit_n.jpg",
+   "r": "tex/fab_knit_r.jpg",
+   "gain": 1.591,
+   "roughness": 1.0,
+   "sheen": 0.6,
+   "clearcoat": 0.0,
+   "tile": 0.27
+  },
+  {
+   "id": "denim",
+   "label": "Denim",
+   "d": "tex/fab_denim_d.jpg",
+   "n": "tex/fab_denim_n.jpg",
+   "r": "tex/fab_denim_r.jpg",
+   "gain": 1.665,
+   "roughness": 1.0,
+   "sheen": 0.1,
+   "clearcoat": 0.0,
+   "tile": 0.27
+  },
+  {
+   "id": "wool",
+   "label": "Wolle",
+   "d": "tex/fab_wool_d.jpg",
+   "n": "tex/fab_wool_n.jpg",
+   "r": "tex/fab_wool_r.jpg",
+   "gain": 1.631,
+   "roughness": 1.0,
+   "sheen": 0.35,
+   "clearcoat": 0.0,
+   "tile": 0.27
+  },
+  {
+   "id": "satin",
+   "label": "Satin",
+   "d": "tex/fab_satin_d.jpg",
+   "n": "tex/fab_satin_n.jpg",
+   "r": "tex/fab_satin_r.jpg",
+   "gain": 1.655,
+   "roughness": 0.55,
+   "sheen": 0.3,
+   "clearcoat": 0.25,
+   "tile": 0.26
+  },
+  {
+   "id": "georgette",
+   "label": "Chiffon",
+   "d": "tex/fab_georgette_d.jpg",
+   "n": "tex/fab_georgette_n.jpg",
+   "r": "tex/fab_georgette_r.jpg",
+   "gain": 1.656,
+   "roughness": 0.85,
+   "sheen": 0.5,
+   "clearcoat": 0.0,
+   "tile": 0.26
+  },
+  {
+   "id": "leather",
+   "label": "Leder",
+   "d": "tex/fab_leather_d.jpg",
+   "n": "tex/fab_leather_n.jpg",
+   "r": "tex/fab_leather_r.jpg",
+   "gain": 1.651,
+   "roughness": 0.75,
+   "sheen": 0.0,
+   "clearcoat": 0.35,
+   "tile": 0.3
+  },
+  {
+   "id": "boucle",
+   "label": "Boucl\u00e9",
+   "d": "tex/fab_boucle_d.jpg",
+   "n": "tex/fab_boucle_n.jpg",
+   "r": "tex/fab_boucle_r.jpg",
+   "gain": 1.778,
+   "roughness": 1.0,
+   "sheen": 0.7,
+   "clearcoat": 0.0,
+   "tile": 0.31
+  },
+  {
+   "id": "linen",
+   "label": "Leinen",
+   "d": "tex/fab_linen_d.jpg",
+   "n": "tex/fab_linen_n.jpg",
+   "r": "tex/fab_linen_r.jpg",
+   "gain": 1.646,
+   "roughness": 1.0,
+   "sheen": 0.2,
+   "clearcoat": 0.0,
+   "tile": 0.27
+  },
+  {
+   "id": "velvet",
+   "label": "Samt",
+   "d": "tex/fab_velvet_d.jpg",
+   "n": "tex/fab_velvet_n.jpg",
+   "r": "tex/fab_velvet_r.jpg",
+   "gain": 1.639,
+   "roughness": 1.0,
+   "sheen": 1.0,
+   "clearcoat": 0.0,
+   "tile": 0.28
+  },
+  {
+   "id": "corduroy",
+   "label": "Cord",
+   "d": "tex/fab_corduroy_d.jpg",
+   "n": "tex/fab_corduroy_n.jpg",
+   "r": "tex/fab_corduroy_r.jpg",
+   "gain": 1.645,
+   "roughness": 1.0,
+   "sheen": 0.45,
+   "clearcoat": 0.0,
+   "tile": 0.27
+  },
+  {
+   "id": "scuba",
+   "label": "Stretch",
+   "d": "tex/fab_scuba_d.jpg",
+   "n": "tex/fab_scuba_n.jpg",
+   "r": "tex/fab_scuba_r.jpg",
+   "gain": 1.642,
+   "roughness": 0.8,
+   "sheen": 0.2,
+   "clearcoat": 0.1,
+   "tile": 0.28
+  }
+ ],
+ "env": "env/studio.hdr",
+ "eyeMesh": "p/eyes",
+ "corneaMesh": "p/cornea",
+ "eyeCenters": {
+  "L": [
+   0.02843,
+   1.49149,
+   0.10977
+  ],
+  "R": [
+   -0.02843,
+   1.49149,
+   0.10977
+  ]
+ },
+ "dress": [
+  "dress_bodice",
+  "dress_skirt"
+ ],
+ "bodyMesh": "body",
+ "credits": "Body, skins, hair, clothes: MakeHuman (CC0). Fabrics, HDRI: Poly Haven (CC0)."
+}

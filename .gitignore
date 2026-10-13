@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# avatar build cache (downloaded CC0 sources)
+tools/avatar/.cache

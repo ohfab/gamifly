@@ -1,8 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Camera, ExternalLink, Heart, ImagePlus, Pause, Play, Plus, Save, Shuffle, Sparkles, Trash2, Wand2, Pencil } from 'lucide-react'
+import { Camera, ExternalLink, Heart, ImagePlus, Plus, Save, Shuffle, Sparkles, Trash2, Wand2, Pencil } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { useGame } from '../store/useGame'
-import { Mannequin } from '../scene/Mannequin'
+import FittingPanel from '../avatar/FittingPanel'
+import { CUTS, TEXTILES, cutFor, textileFor } from '../avatar/map'
 import type { Cloth, ClothCat, ClothFit } from '../game/types'
 import { colorName, harmony } from '../lib/color'
 import { processClothPhoto } from '../lib/image'
@@ -83,6 +84,22 @@ function ClothEditor({ open, onClose, edit }: { open: boolean; onClose: () => vo
             <div className="chips">{FITS[draft.cat]!.map((f) => <button key={f.v} className={`chip ${draft.fit === f.v ? 'active' : ''}`} onClick={() => set({ fit: f.v as ClothFit })}>{f.label}</button>)}</div>
           </div>
         )}
+        {CUTS[draft.cat] && (
+          <div className="field">3D-Schnitt <span className="tiny muted">für die Anprobe</span>
+            <div className="chips">
+              <button className={`chip ${!draft.cut ? 'active' : ''}`} onClick={() => set({ cut: undefined })}>Auto · {CUTS[draft.cat]!.find((c) => c.v === cutFor({ ...draft, cut: undefined } as Cloth))?.label ?? '–'}</button>
+              {CUTS[draft.cat]!.map((c) => <button key={c.v} className={`chip ${draft.cut === c.v ? 'active' : ''}`} onClick={() => set({ cut: c.v })}>{c.label}</button>)}
+            </div>
+          </div>
+        )}
+        {CUTS[draft.cat] && draft.cat !== 'accessory' && (
+          <div className="field">Stoff
+            <div className="chips">
+              <button className={`chip ${!draft.textile ? 'active' : ''}`} onClick={() => set({ textile: undefined })}>Auto · {TEXTILES.find((t) => t.v === textileFor({ ...draft, textile: undefined } as Cloth, cutFor({ ...draft } as Cloth) ?? 'tee'))?.label}</button>
+              {TEXTILES.map((t) => <button key={t.v} className={`chip ${draft.textile === t.v ? 'active' : ''}`} onClick={() => set({ textile: t.v })}>{t.label}</button>)}
+            </div>
+          </div>
+        )}
         <div className="field">Vibe
           <div className="row wrap" style={{ gap: 6 }}>{VIBES.map((v) => <button key={v} className={`chip ${draft.tags.includes(v) ? 'active' : ''}`} onClick={() => toggle('tags', v)}>{v}</button>)}</div>
         </div>
@@ -108,8 +125,6 @@ export default function Style() {
   const [wearing, setWearing] = useState<string[]>(() => s.wornLog[dayKey()] ?? [])
   const [filter, setFilter] = useState<ClothCat | 'all'>('all')
   const [editor, setEditor] = useState<{ open: boolean; edit?: Cloth; key: number }>({ open: false, key: 0 })
-  const [texture, setTexture] = useState(true)
-  const [spin, setSpin] = useState(true)
   const [occasion, setOccasion] = useState<Occasion>('alltag')
   const [weather, setWeather] = useState<Weather>('mild')
   const [seed, setSeed] = useState(1)
@@ -120,7 +135,6 @@ export default function Style() {
   const h = worn.length ? harmony(worn.map((c) => c.color)) : null
   const ideas = useMemo(() => suggest(w, occasion, weather, seed), [w, occasion, weather, seed])
   const missing = useMemo(() => gaps(w), [w])
-  const auraOn = s.equipped.aura != null
 
   const toggleWear = (c: Cloth) => {
     setWearing((cur) => {
@@ -172,21 +186,8 @@ export default function Style() {
 
       <div className="style-layout">
         <div className="col" style={{ gap: 12 }}>
-          <div className="canvas-wrap style-canvas" data-tour="style3d">
-            <Mannequin items={worn} texture={texture} spin={spin} aura={auraOn} theme={s.settings.theme} />
-            <div className="fab-row" style={{ top: 12, right: 12, flexDirection: 'column' }}>
-              <button className="btn ghost icon" onClick={() => setSpin(!spin)} aria-label="Drehen">{spin ? <Pause size={16} /> : <Play size={16} />}</button>
-              <button className="btn ghost icon" onClick={() => setTexture(!texture)} aria-label="Foto-Textur" title="Foto-Textur an/aus" style={{ opacity: texture ? 1 : 0.5 }}><ImagePlus size={16} /></button>
-              <button className="btn ghost icon" onClick={() => { const i = ideas[Math.floor(Math.random() * ideas.length)]; if (i) setWearing(i.items.map((x) => x.id)) }} aria-label="Zufallsoutfit"><Shuffle size={16} /></button>
-            </div>
-            {h && (
-              <motion.div className="style-score" key={h.why} initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
-                <b className="mono">{Math.round(h.score * 100)}</b>
-                <span className="tiny">{h.why}</span>
-              </motion.div>
-            )}
-            {!worn.length && <div className="style-hint small muted">Tippe Teile im Kleiderschrank an, um sie anzuprobieren.</div>}
-          </div>
+          <FittingPanel worn={worn} score={h ? { value: h.score, why: h.why } : null}
+            onShuffle={ideas.length ? () => { const i = ideas[Math.floor(Math.random() * ideas.length)]; if (i) setWearing(i.items.map((x) => x.id)) } : undefined} />
           <div className="card" style={{ padding: 14 }}>
             <div className="row wrap" style={{ gap: 6, minHeight: 34 }}>
               <AnimatePresence>

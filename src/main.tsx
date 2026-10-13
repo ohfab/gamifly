@@ -1,13 +1,14 @@
-import { StrictMode } from 'react'
+import { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App'
 import ArtSheet from './art/ArtSheet'
 
-const sheet = new URLSearchParams(location.search).has('artsheet')
+const q = new URLSearchParams(location.search)
+const AvatarPreview = lazy(() => import('./avatar/Preview'))
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {sheet ? <ArtSheet /> : <App />}
+    {q.has('artsheet') ? <ArtSheet /> : q.has('avatar') ? <Suspense fallback={null}><AvatarPreview /></Suspense> : <App />}
   </StrictMode>,
 )
 

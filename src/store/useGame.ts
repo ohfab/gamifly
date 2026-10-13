@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { DEFAULT_LOOK, type AvatarLook } from '../avatar/look'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import type {
   Cloth, DayLog, Device, FridgeItem, InvEntry, ItemDef, LogEntry, Need, Outfit, Player, Quest, Room,
@@ -62,6 +63,7 @@ export interface GameState {
   chat: ChatMsg[]
   tourDone: boolean
   tipsSeen: Record<string, string>
+  avatar: AvatarLook
 
   // ephemeral ui
   tab: Tab
@@ -143,6 +145,7 @@ export interface GameState {
   wearOutfit: (items: string[]) => void
 
   setSettings: (s: Partial<GameState['settings']>) => void
+  setAvatar: (p: Partial<AvatarLook>) => void
   setCompanion: (s: Partial<CompanionSettings>) => void
   pushChat: (m: Omit<ChatMsg, 'id' | 't'>) => void
   clearChat: () => void
@@ -163,7 +166,7 @@ const freshQuests = (): Quest[] => [...DAILY_TEMPLATES.map(fromTpl), ...WEEKLY_T
 const PERSIST_KEYS = [
   'onboarded', 'player', 'inventory', 'equipped', 'customItems', 'quests', 'questDay', 'questWeek', 'history',
   'health', 'home', 'wardrobe', 'outfits', 'wornLog', 'achievements', 'titles', 'stats', 'log', 'settings', 'chestDay',
-  'boss', 'gate', 'job', 'journal', 'cooked', 'companion', 'chat', 'tourDone', 'tipsSeen',
+  'boss', 'gate', 'job', 'journal', 'cooked', 'companion', 'chat', 'tourDone', 'tipsSeen', 'avatar',
 ] as const
 
 const defaultCompanion = (): CompanionSettings => ({ voice: true, autoSpeak: true, voiceURI: '', rate: 1.02, pitch: 1.12, tips: true, apiKey: '', useClaude: false })
@@ -203,6 +206,7 @@ const baseData = () => ({
   chat: [] as ChatMsg[],
   tourDone: false,
   tipsSeen: {} as Record<string, string>,
+  avatar: DEFAULT_LOOK,
 })
 
 const BOSS_WEAKNESS: Record<string, GameState['damageBoss'] extends (n: number, s: infer S) => void ? S : never> = {
@@ -760,6 +764,7 @@ export const useGame = create<GameState>()(
         },
 
         setSettings: (p) => set((s) => ({ settings: { ...s.settings, ...p } })),
+        setAvatar: (p) => set((s) => ({ avatar: { ...s.avatar, ...p, shape: { ...s.avatar.shape, ...p.shape } } })),
         setCompanion: (p) => set((s) => ({ companion: { ...s.companion, ...p } })),
         pushChat: (m) => set((s) => ({ chat: [...s.chat, { ...m, id: uid(), t: Date.now() }].slice(-60) })),
         clearChat: () => set({ chat: [] }),
@@ -800,6 +805,7 @@ export const useGame = create<GameState>()(
           settings: { ...current.settings, ...p.settings },
           companion: { ...current.companion, ...p.companion },
           stats: { ...current.stats, ...p.stats },
+          avatar: { ...current.avatar, ...p.avatar, shape: { ...current.avatar.shape, ...p.avatar?.shape } },
         }
       },
     },

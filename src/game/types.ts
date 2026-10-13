@@ -112,6 +112,10 @@ export interface Cloth {
   color: string
   photo?: string
   fabric?: string
+  /** 3D cut for the fitting room (see avatar/map.ts); guessed from name + category when empty */
+  cut?: string
+  /** fabric scan for the fitting room; guessed when empty */
+  textile?: string
   tags: string[]
   seasons: string[]
   fav: boolean
