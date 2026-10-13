@@ -57,7 +57,7 @@ npm run preview  # Build lokal ansehen
 
 ## Als App nutzen
 
-- **Website:** Der Workflow in `.github/workflows/deploy.yml` veröffentlicht die App bei jedem Push auf `main` über GitHub Pages. Einmalig unter *Settings → Pages → Source* „GitHub Actions" wählen.
+- **Website:** https://ohfab.github.io/gamifly/ – der Workflow in `.github/workflows/deploy.yml` veröffentlicht die App bei jedem Push auf den Standard-Branch des Repos über GitHub Pages (Quelle: *Settings → Pages → Source* „GitHub Actions").
 - **Handy:** Seite im Browser öffnen und „Zum Home-Bildschirm" wählen. Danach startet Gamifly wie eine App und funktioniert offline.
 
 ## Tech
