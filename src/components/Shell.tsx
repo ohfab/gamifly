@@ -113,7 +113,7 @@ export function Toasts() {
   )
 }
 
-function Burst({ n = 26, colors = ['#ff8fc7', '#b49cff', '#ffd36e', '#8ee3c8', '#9fd3ff'] }: { n?: number; colors?: string[] }) {
+function Burst({ n = 26, colors = ['#4cc9ff', '#8f6bff', '#f5c451', '#7fd6ff', '#c9bcff'] }: { n?: number; colors?: string[] }) {
   const parts = useMemo(() => Array.from({ length: n }, (_, i) => {
     const a = (i / n) * Math.PI * 2 + Math.random() * 0.3
     const d = 120 + Math.random() * 140
@@ -124,7 +124,7 @@ function Burst({ n = 26, colors = ['#ff8fc7', '#b49cff', '#ffd36e', '#8ee3c8', '
       {parts.map((p, i) => (
         <motion.span
           key={i}
-          style={{ position: 'absolute', width: p.s, height: p.s, borderRadius: i % 3 ? '50%' : 3, background: p.c }}
+          style={{ position: 'absolute', width: i % 3 ? p.s * 0.35 : p.s, height: i % 3 ? p.s * 1.6 : p.s * 0.35, borderRadius: 1, background: p.c, boxShadow: `0 0 10px ${p.c}` }}
           initial={{ x: 0, y: 0, opacity: 1, scale: 0.4 }}
           animate={{ x: p.x, y: p.y, opacity: 0, scale: 1, rotate: p.r }}
           transition={{ duration: 1.4, ease: [0.2, 0.8, 0.3, 1], delay: 0.15 }}
@@ -191,7 +191,7 @@ export function LootReveal() {
                   initial={{ rotateY: 180, scale: 0.5, opacity: 0 }}
                   animate={{ rotateY: 0, scale: 1, opacity: 1 }}
                   transition={{ delay: 0.2 + i * 0.25, type: 'spring', stiffness: 160, damping: 14 }}
-                  style={{ width: 170, padding: 18, borderRadius: 22, background: 'var(--surface-solid)', border: '2px solid var(--r)', boxShadow: '0 0 40px var(--r), var(--shadow-lg)' }}
+                  style={{ width: 170, padding: 18, borderRadius: 6, background: 'linear-gradient(180deg, #0c1428, #060a16)', border: '1.5px solid var(--r)', boxShadow: '0 0 40px -6px var(--r), inset 0 0 30px -12px var(--r), var(--shadow-lg)' }}
                 >
                   <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 2.4 }} style={{ display: 'grid', placeItems: 'center' }}><Art name={it.icon} size={84} /></motion.div>
                   <div style={{ fontWeight: 700, marginTop: 6 }}>{it.name}</div>

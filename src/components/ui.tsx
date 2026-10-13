@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { X } from 'lucide-react'
+import { createPortal } from 'react-dom'
 import { Art } from '../art/Art'
 
 export function Bar({ value, max, kind = 'xp', size }: { value: number; max: number; kind?: 'xp' | 'hp' | 'mp' | 'custom'; size?: 'lg'; color?: string }) {
@@ -28,7 +29,8 @@ export function Sheet({ open, onClose, children, title }: { open: boolean; onClo
     window.addEventListener('keydown', k)
     return () => window.removeEventListener('keydown', k)
   }, [open, onClose])
-  return (
+  // portal: sheets must escape sticky / isolated parents, otherwise later content paints over them
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div className="overlay sheet-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
@@ -51,7 +53,8 @@ export function Sheet({ open, onClose, children, title }: { open: boolean; onClo
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   )
 }
 

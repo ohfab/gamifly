@@ -35,6 +35,17 @@ for c in max min; do
       "$MH/targets/breast/female-young-averagemuscle-averageweight-${c}cup-averagefirmness.target"
 done
 
+echo "MakeHuman system assets (skins, hair, clothes, eyes)"
+ZIP=.cache/dl/makehuman_system_assets_cc0.zip
+if [ ! -d .cache/mha/skins ]; then
+  mkdir -p .cache/dl .cache/mha
+  for i in 1 2 3 4 5; do
+    curl -fsSL -C - -o "$ZIP" https://files.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip && break
+    echo "  retry $i"; sleep $((2 ** i))
+  done
+  python3 -I -c "import sys, zipfile; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])" "$ZIP" .cache/mha
+fi
+
 echo "Poly Haven"
 T=https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k
 for id in $(python3 -I -c "import json;print(' '.join(json.load(open('fabrics.json')).values()))"); do

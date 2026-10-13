@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useGame, mpLeft, todayLog, vitals } from '../store/useGame'
 import { RED_GATE_TASKS, SHADOWS, SHADOW_RANKS, SKILLS, ariseChance } from '../game/skills'
 import { effectiveStats } from '../store/useGame'
@@ -142,7 +143,7 @@ export function AriseButton() {
         </motion.button>
       )}
       {boss.extracted && <p className="small" style={{ margin: '10px 0 0', color: 'var(--lilac)' }}>Schatten extrahiert. Er kämpft jetzt in deiner Armee.</p>}
-      <AnimatePresence>
+      {createPortal(<AnimatePresence>
         {show != null && (
           <motion.div className="arise-fx" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShow(null)}>
             <motion.div initial={{ y: 60, scale: 0.6, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 120, damping: 12 }}>
@@ -153,7 +154,7 @@ export function AriseButton() {
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>, document.body)}
     </>
   )
 }

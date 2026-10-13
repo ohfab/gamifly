@@ -119,6 +119,12 @@ export function CompanionSheet() {
 
   useEffect(() => { end.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }) }, [chat.length, busy, open])
   useEffect(() => {
+    if (!open) return
+    const k = (e: KeyboardEvent) => e.key === 'Escape' && setUi({ companionOpen: false })
+    window.addEventListener('keydown', k)
+    return () => window.removeEventListener('keydown', k)
+  }, [open, setUi])
+  useEffect(() => {
     if (!open) { stopRef.current(); return }
     if (chat.length === 0) {
       const hello = `Willkommen, Spieler ${name}. Ich bin das System. Frag mich alles, melde erledigte Aufgaben oder wähle unten eine Aktion.`
