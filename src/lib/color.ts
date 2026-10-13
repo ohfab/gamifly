@@ -73,7 +73,7 @@ export function harmony(colors: string[]): { score: number; why: string } {
       else worst = Math.max(worst, d)
     }
   const pastel = hs.every((x) => x.l > 0.68)
-  if (worst <= 40 && !comp) return { score: 0.9, why: pastel ? 'Ton-in-Ton Pastell 🍬' : 'Analoge Farben – harmonisch' }
+  if (worst <= 40 && !comp) return { score: 0.9, why: pastel ? 'Ton-in-Ton Pastell' : 'Analoge Farben – harmonisch' }
   if (comp && accents.length === 2) return { score: neutrals ? 0.8 : 0.72, why: 'Komplementär-Kontrast – mutig!' }
   if (pastel) return { score: 0.75, why: 'Pastell-Mix – verspielt' }
   return { score: 0.45, why: 'Viele Farben – eher wild' }

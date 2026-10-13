@@ -14,12 +14,12 @@ export const RANKS = [
 export const rankFor = (level: number) => [...RANKS].reverse().find((r) => level >= r.min)!
 
 export const STAT_META: Record<StatKey, { label: string; short: string; icon: string; desc: string }> = {
-  str: { label: 'Stärke', short: 'STR', icon: '💪', desc: 'Workouts & Kraft' },
-  vit: { label: 'Vitalität', short: 'VIT', icon: '🍓', desc: 'Schlaf, Wasser, Ernährung' },
-  agi: { label: 'Agilität', short: 'AGI', icon: '🩰', desc: 'Schritte, Cardio, Tanz' },
-  int: { label: 'Intelligenz', short: 'INT', icon: '📚', desc: 'Lernen, Lesen, Fokus' },
-  per: { label: 'Wahrnehmung', short: 'PER', icon: '🔮', desc: 'Ordnung, Achtsamkeit' },
-  cha: { label: 'Charme', short: 'CHA', icon: '💄', desc: 'Style, Selfcare, Social' },
+  str: { label: 'Stärke', short: 'STR', icon: 'dumbbell', desc: 'Workouts & Kraft' },
+  vit: { label: 'Vitalität', short: 'VIT', icon: 'strawberry', desc: 'Schlaf, Wasser, Ernährung' },
+  agi: { label: 'Agilität', short: 'AGI', icon: 'ballet', desc: 'Schritte, Cardio, Tanz' },
+  int: { label: 'Intelligenz', short: 'INT', icon: 'book', desc: 'Lernen, Lesen, Fokus' },
+  per: { label: 'Wahrnehmung', short: 'PER', icon: 'crystal_ball', desc: 'Ordnung, Achtsamkeit' },
+  cha: { label: 'Charme', short: 'CHA', icon: 'lipstick', desc: 'Style, Selfcare, Social' },
 }
 export const STAT_KEYS: StatKey[] = ['str', 'vit', 'agi', 'int', 'per', 'cha']
 export const STAT_XP_PER_POINT = 100

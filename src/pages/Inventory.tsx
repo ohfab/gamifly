@@ -7,6 +7,8 @@ import { ACHIEVEMENTS } from '../game/achievements'
 import { RARITY_META, STAT_KEYS, STAT_META } from '../game/leveling'
 import type { ItemDef, ItemType, Slot } from '../game/types'
 import { Empty, Seg, Sheet } from '../components/ui'
+import { Art, REWARD_ICONS } from '../art/Art'
+import { JOBS } from '../game/world'
 
 type View = 'bag' | 'equip' | 'shop' | 'fusion' | 'trophies'
 const TYPE_LABEL: Record<ItemType | 'all', string> = { all: 'Alle', consumable: 'Tränke & Boxen', equipment: 'Ausrüstung', material: 'Material', reward: 'Belohnungen', key: 'Key Items' }
@@ -19,7 +21,7 @@ function ItemSheet({ def, onClose }: { def: ItemDef | null; onClose: () => void 
   return (
     <Sheet open={!!def} onClose={onClose}>
       <div className={`col r-${def.rarity}`} style={{ alignItems: 'center', gap: 10, textAlign: 'center' }}>
-        <motion.div className="slot" style={{ width: 110, fontSize: 56 }} initial={{ rotateY: 90 }} animate={{ rotateY: 0 }}>{def.icon}</motion.div>
+        <motion.div className="slot" style={{ width: 120 }} initial={{ rotateY: 90 }} animate={{ rotateY: 0 }}><Art name={def.icon} size={84} /></motion.div>
         <div>
           <div style={{ fontWeight: 800, fontSize: 20 }}>{def.name}</div>
           <div className="r-text mono tiny" style={{ letterSpacing: '0.12em', textTransform: 'uppercase' }}>{RARITY_META[def.rarity].label} · {TYPE_LABEL[def.type]}</div>
@@ -28,7 +30,7 @@ function ItemSheet({ def, onClose }: { def: ItemDef | null; onClose: () => void 
         {def.bonus && (
           <div className="row wrap" style={{ justifyContent: 'center', gap: 6 }}>
             {Object.entries(def.bonus).map(([k, v]) => <span key={k} className="pill" style={{ color: '#2fb385' }}>{STAT_META[k as keyof typeof STAT_META].short} +{v}</span>)}
-            {def.slot && <span className="pill">{SLOT_META[def.slot].icon} {SLOT_META[def.slot].label}</span>}
+            {def.slot && <span className="pill"><Art name={SLOT_META[def.slot].icon} size={14} /> {SLOT_META[def.slot].label}</span>}
           </div>
         )}
         <div className="small muted">Im Besitz: <b className="mono">{qty}</b></div>
@@ -39,7 +41,7 @@ function ItemSheet({ def, onClose }: { def: ItemDef | null; onClose: () => void 
               : <button className="btn" onClick={() => { s.equip(def.id); onClose() }}>Ausrüsten</button>
           )}
           {(def.type === 'consumable' || def.type === 'reward') && def.effect?.kind !== 'streakShield' && qty > 0 && (
-            <button className="btn" onClick={() => { s.useItem(def.id); onClose() }}>{def.type === 'reward' ? 'Einlösen 💖' : def.effect?.kind === 'mystery' ? 'Öffnen ✨' : 'Benutzen'}</button>
+            <button className="btn" onClick={() => { s.useItem(def.id); onClose() }}>{def.type === 'reward' ? 'Einlösen' : def.effect?.kind === 'mystery' ? 'Öffnen' : 'Benutzen'}</button>
           )}
           {def.effect?.kind === 'streakShield' && <span className="small muted">Wird automatisch verwendet, wenn du eine Daily Quest verpasst.</span>}
         </div>
@@ -79,7 +81,7 @@ function Bag({ onOpen }: { onOpen: (d: ItemDef) => void }) {
               onClick={() => onOpen(d)}
               title={d.name}
             >
-              {d.icon}
+              <Art name={d.icon} size={44} />
               {e.qty > 1 && <span className="qty">×{e.qty}</span>}
               {e.isNew && <span className="new" />}
               {Object.values(s.equipped).includes(d.id) && <span className="eq-tag">E</span>}
@@ -106,7 +108,7 @@ function Equip({ onOpen }: { onOpen: (d: ItemDef) => void }) {
             const def = s.equipped[slot] ? s.itemDef(s.equipped[slot]!) : undefined
             return (
               <motion.button key={slot} whileTap={{ scale: 0.92 }} className={`pd-slot pd-${i}`} onClick={() => def && onOpen(def)}>
-                <div className={`slot ${def ? `r-${def.rarity}` : 'empty'}`}>{def ? def.icon : SLOT_META[slot].icon}</div>
+                <div className={`slot ${def ? `r-${def.rarity}` : 'empty'}`}><Art name={def ? def.icon : SLOT_META[slot].icon} size={def ? 48 : 32} /></div>
                 <span className="tiny muted">{SLOT_META[slot].label}</span>
               </motion.button>
             )
@@ -114,7 +116,9 @@ function Equip({ onOpen }: { onOpen: (d: ItemDef) => void }) {
           <div className="pd-center">
             <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 3.2, ease: 'easeInOut' }} className="pd-figure">
               {s.equipped.aura && <span className="pd-aura" />}
-              🧚
+              <div className="avatar-orb" style={{ width: 110, height: 110, borderRadius: 34, fontSize: 52 }}>
+                {s.job ? <Art name={JOBS.find((j) => j.id === s.job)!.art} size={80} /> : <span>{s.player.name.slice(0, 1).toUpperCase()}</span>}
+              </div>
             </motion.div>
           </div>
         </div>
@@ -135,11 +139,11 @@ function Equip({ onOpen }: { onOpen: (d: ItemDef) => void }) {
           <div className="inv-grid">
             {owned.map((d) => (
               <button key={d.id} className={`slot r-${d.rarity}`} onClick={() => onOpen(d)} title={d.name}>
-                {d.icon}{Object.values(s.equipped).includes(d.id) && <span className="eq-tag">E</span>}
+                <Art name={d.icon} size={44} />{Object.values(s.equipped).includes(d.id) && <span className="eq-tag">E</span>}
               </button>
             ))}
           </div>
-        ) : <Empty icon="🗡️" text="Noch keine Ausrüstung – schließe Quests ab oder besuche den Shop." />}
+        ) : <Empty icon="sword" text="Noch keine Ausrüstung. Schließe Quests ab oder besuche den Shop." />}
       </div>
     </div>
   )
@@ -150,13 +154,13 @@ function ShopCard({ d, removable }: { d: ItemDef; removable?: boolean }) {
   const canBuy = d.gemPrice ? s.player.gems >= d.gemPrice : s.player.gold >= (d.price ?? Infinity)
   return (
     <motion.div className={`shop-item r-${d.rarity}`} whileHover={{ y: -3 }}>
-      <div className="slot" style={{ width: 54, fontSize: 26 }}>{d.icon}</div>
+      <div className={`slot r-${d.rarity}`} style={{ width: 56 }}><Art name={d.icon} size={40} /></div>
       <div className="grow">
         <div style={{ fontWeight: 700, fontSize: 14 }}>{d.name}</div>
         <div className="tiny muted">{d.desc}</div>
       </div>
       <div className="col" style={{ alignItems: 'flex-end', gap: 4 }}>
-        <button className="btn xs" disabled={!canBuy} onClick={() => s.buy(d.id)}>{d.gemPrice ? `💎 ${d.gemPrice}` : `🪙 ${d.price}`}</button>
+        <button className="btn xs" disabled={!canBuy} onClick={() => s.buy(d.id)}><Art name={d.gemPrice ? 'gem' : 'coin'} size={14} /> {d.gemPrice ?? d.price}</button>
         {removable && <button className="btn ghost xs" onClick={() => s.removeReward(d.id)} aria-label="Belohnung entfernen"><Trash2 size={12} /></button>}
       </div>
     </motion.div>
@@ -166,7 +170,7 @@ function ShopCard({ d, removable }: { d: ItemDef; removable?: boolean }) {
 function Shop() {
   const s = useGame()
   const [name, setName] = useState('')
-  const [icon, setIcon] = useState('🧋')
+  const [icon, setIcon] = useState('boba')
   const [price, setPrice] = useState(300)
   const [adding, setAdding] = useState(false)
   const goods = ITEMS.filter((i) => i.price || i.gemPrice)
@@ -174,19 +178,21 @@ function Shop() {
   return (
     <div className="grid-2">
       <div className="card">
-        <div className="card-title"><h2>💖 Echte Belohnungen</h2><button className="btn soft xs" onClick={() => setAdding(true)}><Plus size={14} /> Neu</button></div>
+        <div className="card-title"><h2 className="row" style={{ gap: 8 }}><Art name="heart" size={26} /> Echte Belohnungen</h2><button className="btn soft xs" onClick={() => setAdding(true)}><Plus size={14} /> Neu</button></div>
         <p className="small muted" style={{ marginTop: -4 }}>Kaufe dir mit Gold echte Treats. Der Gutschein landet in deiner Tasche – einlösen, wenn du ihn dir gönnst.</p>
         <div className="col" style={{ gap: 10 }}>{rewards.map((d) => <ShopCard key={d.id} d={d} removable />)}</div>
       </div>
       <div className="card">
-        <div className="card-title"><h2>🛍️ Händlerin Mira</h2><span className="tiny muted">Feste Preise</span></div>
+        <div className="card-title"><h2 className="row" style={{ gap: 8 }}><Art name="shop_bag" size={26} /> Händlerin Mira</h2><span className="tiny muted">Feste Preise</span></div>
         <div className="col" style={{ gap: 10 }}>{goods.map((d) => <ShopCard key={d.id} d={d} />)}</div>
       </div>
       <Sheet open={adding} onClose={() => setAdding(false)} title="Neue Belohnung">
         <div className="col" style={{ gap: 12 }}>
-          <div className="row">
-            <input className="input" style={{ width: 64, textAlign: 'center', fontSize: 24 }} value={icon} onChange={(e) => setIcon(e.target.value)} maxLength={4} aria-label="Emoji" />
-            <input className="input" placeholder="z. B. Neues Buch, Spa-Tag, Sushi…" value={name} onChange={(e) => setName(e.target.value)} />
+          <input id="reward-name" className="input" placeholder="z. B. Neues Buch, Spa-Tag, Sushi…" value={name} onChange={(e) => setName(e.target.value)} />
+          <div className="field">Bild
+            <div className="icon-picker">
+              {REWARD_ICONS.map((k) => <button key={k} className={icon === k ? 'on' : ''} onClick={() => setIcon(k)} aria-label={k}><Art name={k} size={36} /></button>)}
+            </div>
           </div>
           <label className="field">Preis: {price} Gold
             <input type="range" min={50} max={3000} step={50} value={price} onChange={(e) => setPrice(Number(e.target.value))} />
@@ -222,7 +228,7 @@ function Fusion() {
             const d = defs[i]
             return (
               <motion.button key={i} className={`slot ${d ? `r-${d.rarity}` : 'empty'} f-${i}`} onClick={() => setPicked(picked.filter((_, j) => j !== i))} animate={ok ? { scale: [1, 1.08, 1] } : {}} transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.2 }}>
-                {d ? d.icon : '+'}
+                {d ? <Art name={d.icon} size={44} /> : '+'}
               </motion.button>
             )
           })}
@@ -237,11 +243,11 @@ function Fusion() {
           <div className="inv-grid">
             {fusable.map((d) => (
               <button key={d.id} className={`slot r-${d.rarity}`} disabled={!avail[d.id] || picked.length >= 3 || (!!rarity && d.rarity !== rarity)} style={{ opacity: !avail[d.id] || (!!rarity && d.rarity !== rarity) ? 0.3 : 1 }} onClick={() => setPicked([...picked, d.id])} title={d.name}>
-                {d.icon}<span className="qty">×{avail[d.id]}</span>
+                <Art name={d.icon} size={40} /><span className="qty">×{avail[d.id]}</span>
               </button>
             ))}
           </div>
-        ) : <Empty icon="🔮" text="Sammle Materialien durch Quests." />}
+        ) : <Empty icon="crystal_ball" text="Sammle Materialien durch Quests." />}
       </div>
     </div>
   )
@@ -257,7 +263,7 @@ function Trophies() {
           const got = s.achievements.includes(a.id)
           return (
             <motion.div key={a.id} className={`trophy ${got ? 'got' : ''}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0, transition: { delay: i * 0.025 } }}>
-              <div className="t-medal">{got ? a.icon : <Lock size={18} />}</div>
+              <div className="t-medal">{got ? <Art name={a.icon} size={44} /> : <Lock size={18} />}</div>
               <div className="grow">
                 <div style={{ fontWeight: 700, fontSize: 14 }}>{a.name}</div>
                 <div className="tiny muted">{a.desc}</div>
@@ -279,13 +285,17 @@ export default function Inventory() {
     <>
       <div className="page-title">
         <div>
-          <p>🪙 {p.gold.toLocaleString('de-DE')} Gold · 💎 {p.gems} Kristalle</p>
+          <p className="row" style={{ gap: 6 }}><Art name="coin" size={16} /> {p.gold.toLocaleString('de-DE')} Gold · <Art name="gem" size={16} /> {p.gems} Kristalle</p>
           <h1><span className="accent">Inventar</span></h1>
         </div>
       </div>
-      <div className="scroll-x" style={{ marginBottom: 16 }}>
+      <div className="scroll-x" style={{ marginBottom: 16 }} data-tour="inventory">
         <Seg id="inv" value={view} onChange={setView} options={[
-          { v: 'bag', label: '🎒 Tasche' }, { v: 'equip', label: '🗡️ Ausrüstung' }, { v: 'shop', label: '🛍️ Shop' }, { v: 'fusion', label: '🔮 Fusion' }, { v: 'trophies', label: '🏆 Erfolge' },
+          { v: 'bag', label: <span className="row" style={{ gap: 6 }}><Art name="backpack" size={18} /> Tasche</span> },
+          { v: 'equip', label: <span className="row" style={{ gap: 6 }}><Art name="sword" size={18} /> Ausrüstung</span> },
+          { v: 'shop', label: <span className="row" style={{ gap: 6 }}><Art name="shop_bag" size={18} /> Shop</span> },
+          { v: 'fusion', label: <span className="row" style={{ gap: 6 }}><Art name="fusion" size={18} /> Fusion</span> },
+          { v: 'trophies', label: <span className="row" style={{ gap: 6 }}><Art name="trophy" size={18} /> Erfolge</span> },
         ]} />
       </div>
       <AnimatePresence mode="wait">

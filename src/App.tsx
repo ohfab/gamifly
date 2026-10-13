@@ -5,10 +5,15 @@ import { Ambient, Hud, LevelUp, LootReveal, Nav, Toasts } from './components/She
 import { Awakening } from './components/Awakening'
 import { Settings } from './components/Settings'
 import { setSfx } from './lib/sfx'
+import { setHaptics } from './lib/haptics'
+import { CompanionSheet } from './companion/Companion'
+import { Handbook } from './guide/Handbook'
+import { Tour } from './guide/Tour'
 import Status from './pages/Status'
 import Quests from './pages/Quests'
 import Life from './pages/Life'
 import Inventory from './pages/Inventory'
+import { Art } from './art/Art'
 
 const Home = lazy(() => import('./pages/Home'))
 const Style = lazy(() => import('./pages/Style'))
@@ -16,7 +21,7 @@ const Style = lazy(() => import('./pages/Style'))
 function Loader() {
   return (
     <div className="center" style={{ padding: 80 }}>
-      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.4, ease: 'linear' }} style={{ fontSize: 36, display: 'inline-block' }}>✦</motion.div>
+      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.4, ease: 'linear' }} style={{ display: 'inline-block' }}><Art name="xp" size={40} /></motion.div>
       <div className="mono small muted mt">Dungeon wird geladen…</div>
     </div>
   )
@@ -28,6 +33,7 @@ export default function App() {
   const tab = useGame((s) => s.tab)
   const theme = useGame((s) => s.settings.theme)
   const sound = useGame((s) => s.settings.sound)
+  const haptics = useGame((s) => s.settings.haptics)
   const [settings, setSettings] = useState(false)
 
   useEffect(() => {
@@ -40,9 +46,10 @@ export default function App() {
     if (!hydrated) return
     useGame.getState().rollover()
     const t = setInterval(() => useGame.getState().rollover(), 60_000)
+    const g = setInterval(() => { if (useGame.getState().gate) useGame.getState().checkGate() }, 5_000)
     const vis = () => document.visibilityState === 'visible' && useGame.getState().rollover()
     document.addEventListener('visibilitychange', vis)
-    return () => { clearInterval(t); document.removeEventListener('visibilitychange', vis) }
+    return () => { clearInterval(t); clearInterval(g); document.removeEventListener('visibilitychange', vis) }
   }, [hydrated])
 
   useEffect(() => {
@@ -50,6 +57,7 @@ export default function App() {
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'night' ? '#120b1c' : theme === 'matcha' ? '#56682f' : '#fff6fa')
   }, [theme])
   useEffect(() => setSfx(sound), [sound])
+  useEffect(() => setHaptics(haptics), [haptics])
 
   if (!hydrated) return <><Ambient /><Loader /></>
   if (!onboarded) return <><Ambient /><Awakening /><Toasts /></>
@@ -82,6 +90,9 @@ export default function App() {
       <Toasts />
       <LevelUp />
       <LootReveal />
+      <CompanionSheet />
+      <Handbook />
+      <Tour />
       <Settings open={settings} onClose={() => setSettings(false)} />
     </div>
   )

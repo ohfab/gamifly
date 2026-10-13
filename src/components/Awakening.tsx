@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { useGame } from '../store/useGame'
 import { sfx } from '../lib/sfx'
+import { Art } from '../art/Art'
 
 const LINES = [
   'Du hast die Voraussetzungen erfüllt.',
@@ -30,7 +31,7 @@ export function Awakening() {
         {step === 0 && (
           <motion.div key="s0" className="awaken-hero" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.94, filter: 'blur(8px)' }}>
             <div className="awaken-top">
-              <motion.div className="awaken-mark" animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.06, 1] }} transition={{ repeat: Infinity, duration: 4 }}>🎀</motion.div>
+              <motion.div className="awaken-mark" animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.06, 1] }} transition={{ repeat: Infinity, duration: 4 }}><Art name="bow" size={64} /></motion.div>
               <motion.h1 className="awaken-title" initial="h" animate="s" variants={{ h: {}, s: { transition: { staggerChildren: 0.12, delayChildren: 0.15 } } }}>
                 {['Dein', 'Leben.', 'Dein', 'Level.'].map((w, i) => (
                   <motion.span key={i} className={i % 2 ? 'hl' : ''} variants={{ h: { opacity: 0, y: 30 }, s: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 200, damping: 18 } } }}>{w}</motion.span>

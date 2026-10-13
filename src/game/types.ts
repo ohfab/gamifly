@@ -55,6 +55,7 @@ export interface Quest {
   done: boolean
   doneAt?: number
   custom?: boolean
+  bonus?: boolean
 }
 
 export interface Player {

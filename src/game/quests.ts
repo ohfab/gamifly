@@ -41,11 +41,11 @@ export const PENALTY: Tpl = {
 export const fromTpl = (t: Tpl): Quest => ({ ...t, done: false, progress: 0 })
 
 export const CAT_META = {
-  body: { label: 'Körper', icon: '🏃‍♀️', color: '#ff8fc7' },
-  mind: { label: 'Geist', icon: '🧠', color: '#a98bff' },
-  home: { label: 'Zuhause', icon: '🏡', color: '#7fd4b8' },
-  style: { label: 'Style', icon: '👗', color: '#ffad8f' },
-  health: { label: 'Health', icon: '💧', color: '#7cc4ff' },
-  social: { label: 'Social', icon: '💌', color: '#ffc75f' },
-  custom: { label: 'Eigene', icon: '⭐', color: '#c9a3ff' },
+  body: { label: 'Körper', icon: 'run_shoe', color: '#ff8fc7' },
+  mind: { label: 'Geist', icon: 'book', color: '#a98bff' },
+  home: { label: 'Zuhause', icon: 'house', color: '#7fd4b8' },
+  style: { label: 'Style', icon: 'dress', color: '#ffad8f' },
+  health: { label: 'Health', icon: 'drop', color: '#7cc4ff' },
+  social: { label: 'Social', icon: 'letter', color: '#ffc75f' },
+  custom: { label: 'Eigene', icon: 'star', color: '#c9a3ff' },
 } as const

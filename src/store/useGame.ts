@@ -8,15 +8,29 @@ import { ITEMS, nextRarity, rollItem } from '../game/items'
 import { DAILY_TEMPLATES, MAIN_TEMPLATES, PENALTY, WEEKLY_TEMPLATES, fromTpl } from '../game/quests'
 import { STAT_KEYS, STAT_META, STAT_XP_PER_POINT, xpToNext } from '../game/leveling'
 import { ACHIEVEMENTS } from '../game/achievements'
+import { BONUS_POOL, BOSSES, GATE_RANKS, JOBS, JOB_BONUS, JOB_LEVEL, bossHpFor } from '../game/world'
+import { RECIPES } from '../data/recipes'
 import { DEFAULT_DEVICES, DEFAULT_FRIDGE, DEFAULT_ROOMS, DEFAULT_SHOPPING } from '../data/home'
 import { idbStorage } from '../lib/storage'
 import { dayKey, daysBetween, uid, weekKey } from '../lib/util'
 import { sfx } from '../lib/sfx'
+import { buzz } from '../lib/haptics'
+import { foodArt, resolveArt, thingArt } from '../art/Art'
 
 export type Tab = 'status' | 'quests' | 'home' | 'style' | 'life' | 'inventory'
 
+export interface ChatMsg { id: string; role: 'user' | 'lumi'; text: string; t: number; actions?: { label: string; cmd: string }[] }
+export interface CompanionSettings {
+  voice: boolean; autoSpeak: boolean; voiceURI: string; rate: number; pitch: number
+  tips: boolean; apiKey: string; useClaude: boolean
+}
+export interface BossState { week: string; idx: number; hp: number; maxHp: number; defeated: boolean }
+export interface GateState { rank: string; start: number; minutes: number }
+export interface Journal { text: string; grateful: string[] }
+
 const zeroStats = (): Stats => ({ str: 0, vit: 0, agi: 0, int: 0, per: 0, cha: 0 })
 const emptyDay = (): DayLog => ({ water: 0, steps: 0, workoutMin: 0, meditationMin: 0 })
+const hash = (s: string) => [...s].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7)
 
 export interface GameState {
   onboarded: boolean
@@ -35,22 +49,37 @@ export interface GameState {
   wornLog: Record<string, string[]>
   achievements: string[]
   titles: string[]
-  stats: { questsDone: number; legendaryFound: number; fusions: number; rewardsRedeemed: number }
+  stats: { questsDone: number; legendaryFound: number; fusions: number; rewardsRedeemed: number; bossesDefeated: number; gatesCleared: number; journalDays: number; recipesCooked: number }
   log: LogEntry[]
-  settings: { theme: 'matcha' | 'pastel' | 'night'; sound: boolean }
+  settings: { theme: 'matcha' | 'pastel' | 'night'; sound: boolean; haptics: boolean }
   chestDay: string
+  boss: BossState | null
+  gate: GateState | null
+  job: string | null
+  journal: Record<string, Journal>
+  cooked: Record<string, string[]>
+  companion: CompanionSettings
+  chat: ChatMsg[]
+  tourDone: boolean
+  tipsSeen: Record<string, string>
 
   // ephemeral ui
   tab: Tab
   toasts: Toast[]
   levelUp: number | null
   reveal: ItemDef[] | null
+  companionOpen: boolean
+  handbook: string | null
+  tourStep: number | null
+  fridgeOpen: boolean
+  bossHit: number
 
   setTab: (t: Tab) => void
   notify: (t: Omit<Toast, 'id'>) => void
   dismiss: (id: string) => void
   closeLevelUp: () => void
   closeReveal: () => void
+  setUi: (p: Partial<Pick<GameState, 'companionOpen' | 'handbook' | 'tourStep' | 'fridgeOpen'>>) => void
 
   awaken: (name: string) => void
   rollover: () => void
@@ -61,11 +90,19 @@ export interface GameState {
   addStatXp: (s: Partial<Stats>) => void
   allocate: (k: StatKey) => void
   setTitle: (t: string) => void
+  chooseJob: (id: string) => void
 
   completeQuest: (id: string) => void
   addQuest: (q: Pick<Quest, 'title' | 'type' | 'cat' | 'xp' | 'desc'> & { stat?: StatKey }) => void
   removeQuest: (id: string) => void
   claimChest: () => void
+
+  damageBoss: (n: number, source: 'quest' | 'clean' | 'gate' | 'move' | 'food' | 'style') => void
+  startGate: (rank: string) => void
+  checkGate: () => void
+  abandonGate: () => void
+  saveJournal: (j: Journal) => void
+  cookRecipe: (id: string) => void
 
   itemDef: (id: string) => ItemDef | undefined
   grant: (defId: string, qty?: number) => void
@@ -106,6 +143,10 @@ export interface GameState {
   wearOutfit: (items: string[]) => void
 
   setSettings: (s: Partial<GameState['settings']>) => void
+  setCompanion: (s: Partial<CompanionSettings>) => void
+  pushChat: (m: Omit<ChatMsg, 'id' | 't'>) => void
+  clearChat: () => void
+  seeTip: (id: string) => void
   exportData: () => string
   importData: (json: string) => boolean
   resetAll: () => void
@@ -117,16 +158,16 @@ const initialPlayer = (name = ''): Player => ({
   title: 'Erwachte Seele', streak: 0, bestStreak: 0, createdAt: Date.now(),
 })
 
-const freshQuests = (): Quest[] => [
-  ...DAILY_TEMPLATES.map(fromTpl),
-  ...WEEKLY_TEMPLATES.map(fromTpl),
-  ...MAIN_TEMPLATES.map(fromTpl),
-]
+const freshQuests = (): Quest[] => [...DAILY_TEMPLATES.map(fromTpl), ...WEEKLY_TEMPLATES.map(fromTpl), ...MAIN_TEMPLATES.map(fromTpl)]
 
 const PERSIST_KEYS = [
   'onboarded', 'player', 'inventory', 'equipped', 'customItems', 'quests', 'questDay', 'questWeek', 'history',
   'health', 'home', 'wardrobe', 'outfits', 'wornLog', 'achievements', 'titles', 'stats', 'log', 'settings', 'chestDay',
+  'boss', 'gate', 'job', 'journal', 'cooked', 'companion', 'chat', 'tourDone', 'tipsSeen',
 ] as const
+
+const defaultCompanion = (): CompanionSettings => ({ voice: true, autoSpeak: true, voiceURI: '', rate: 1.02, pitch: 1.12, tips: true, apiKey: '', useClaude: false })
+const defaultStats = () => ({ questsDone: 0, legendaryFound: 0, fusions: 0, rewardsRedeemed: 0, bossesDefeated: 0, gatesCleared: 0, journalDays: 0, recipesCooked: 0 })
 
 const baseData = () => ({
   onboarded: false,
@@ -134,9 +175,9 @@ const baseData = () => ({
   inventory: [] as InvEntry[],
   equipped: {} as Partial<Record<Slot, string>>,
   customItems: [
-    { id: 'rw_boba', name: 'Bubble Tea', desc: 'Echte Belohnung – gönn dir!', icon: '🧋', rarity: 'rare', type: 'reward', price: 250, effect: { kind: 'reward' } },
-    { id: 'rw_movie', name: 'Filmabend', desc: 'Echte Belohnung – Netflix & chill.', icon: '🎬', rarity: 'rare', type: 'reward', price: 400, effect: { kind: 'reward' } },
-    { id: 'rw_nails', name: 'Nageldesign', desc: 'Echte Belohnung – fresh nails.', icon: '💅', rarity: 'epic', type: 'reward', price: 1200, effect: { kind: 'reward' } },
+    { id: 'rw_boba', name: 'Bubble Tea', desc: 'Echte Belohnung – gönn dir!', icon: 'boba', rarity: 'rare', type: 'reward', price: 250, effect: { kind: 'reward' } },
+    { id: 'rw_movie', name: 'Filmabend', desc: 'Echte Belohnung – Netflix & chill.', icon: 'clapper', rarity: 'rare', type: 'reward', price: 400, effect: { kind: 'reward' } },
+    { id: 'rw_nails', name: 'Nageldesign', desc: 'Echte Belohnung – fresh nails.', icon: 'polish', rarity: 'epic', type: 'reward', price: 1200, effect: { kind: 'reward' } },
   ] as ItemDef[],
   quests: freshQuests(),
   questDay: dayKey(),
@@ -149,19 +190,35 @@ const baseData = () => ({
   wornLog: {} as Record<string, string[]>,
   achievements: [] as string[],
   titles: ['Erwachte Seele'],
-  stats: { questsDone: 0, legendaryFound: 0, fusions: 0, rewardsRedeemed: 0 },
+  stats: defaultStats(),
   log: [] as LogEntry[],
-  settings: { theme: 'matcha' as GameState['settings']['theme'], sound: true },
+  settings: { theme: 'matcha' as GameState['settings']['theme'], sound: true, haptics: true },
   chestDay: '',
+  boss: null as BossState | null,
+  gate: null as GateState | null,
+  job: null as string | null,
+  journal: {} as Record<string, Journal>,
+  cooked: {} as Record<string, string[]>,
+  companion: defaultCompanion(),
+  chat: [] as ChatMsg[],
+  tourDone: false,
+  tipsSeen: {} as Record<string, string>,
 })
+
+const BOSS_WEAKNESS: Record<string, GameState['damageBoss'] extends (n: number, s: infer S) => void ? S : never> = {
+  golem: 'quest', hydra: 'clean', phantom: 'gate', kraken: 'move', dragon: 'food',
+}
 
 export const useGame = create<GameState>()(
   persist(
     (set, get) => {
-      const log = (text: string, icon: string) =>
-        set((s) => ({ log: [{ t: Date.now(), text, icon }, ...s.log].slice(0, 80) }))
+      const log = (text: string, icon: string) => set((s) => ({ log: [{ t: Date.now(), text, icon }, ...s.log].slice(0, 80) }))
       const mapRoom = (id: string, fn: (r: Room) => Room) =>
         set((s) => ({ home: { ...s.home, rooms: s.home.rooms.map((r) => (r.id === id ? fn(r) : r)) } }))
+      const jobBonus = (cat: string) => {
+        const j = JOBS.find((x) => x.id === get().job)
+        return j && (j.cats as string[]).includes(cat) ? 1 + JOB_BONUS : 1
+      }
 
       return {
         ...baseData(),
@@ -169,6 +226,11 @@ export const useGame = create<GameState>()(
         toasts: [],
         levelUp: null,
         reveal: null,
+        companionOpen: false,
+        handbook: null,
+        tourStep: null,
+        fridgeOpen: false,
+        bossHit: 0,
 
         setTab: (tab) => set({ tab }),
         notify: (t) => {
@@ -179,16 +241,19 @@ export const useGame = create<GameState>()(
         dismiss: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
         closeLevelUp: () => set({ levelUp: null }),
         closeReveal: () => set({ reveal: null }),
+        setUi: (p) => set(p),
 
         awaken: (name) => {
-          set({ ...baseData(), onboarded: true, player: initialPlayer(name.trim() || 'Player') })
+          const keep = { settings: get().settings, companion: get().companion }
+          set({ ...baseData(), ...keep, onboarded: true, player: initialPlayer(name.trim() || 'Player') })
           get().grant('key_awaken')
           get().grant('potion_xp_s', 2)
           get().grant('eq_scrunchie')
           get().equip('eq_scrunchie')
           get().grant('streak_shield')
           get().grant('box_common')
-          log('Du bist erwacht. Willkommen, Player.', '🌅')
+          log('Du bist erwacht. Willkommen, Player.', 'sunrise')
+          get().rollover()
           get().checkAchievements()
         },
 
@@ -206,19 +271,25 @@ export const useGame = create<GameState>()(
               const shield = s.inventory.find((i) => i.defId === 'streak_shield' && i.qty > 0)
               if (shield && player.streak > 0) {
                 set({ inventory: s.inventory.map((i) => (i.defId === 'streak_shield' ? { ...i, qty: i.qty - 1 } : i)).filter((i) => i.qty > 0) })
-                get().notify({ tone: 'system', icon: '🎀', title: 'Schleifen-Schild aktiviert', body: 'Dein Streak wurde geschützt. Die Strafzone wurde abgewehrt.' })
+                get().notify({ tone: 'system', icon: 'shield_bow', title: 'Schleifen-Schild aktiviert', body: 'Dein Streak wurde geschützt. Die Strafzone wurde abgewehrt.' })
               } else {
                 player = { ...player, streak: 0 }
                 if (!quests.some((q) => q.type === 'penalty' && !q.done)) quests = [...quests, { ...fromTpl(PENALTY), id: 'p_' + uid() }]
                 setTimeout(() => {
                   sfx.warn()
-                  get().notify({ tone: 'warn', icon: '⚠️', title: 'Strafzone betreten', body: 'Die Daily Quest wurde nicht abgeschlossen. Eine Strafquest wurde zugewiesen.' })
+                  buzz([60, 40, 60])
+                  get().notify({ tone: 'warn', icon: 'warning', title: 'Strafzone betreten', body: 'Die Daily Quest wurde nicht abgeschlossen. Eine Strafquest wurde zugewiesen.' })
                 }, 900)
               }
             }
             quests = quests
               .filter((q) => !(q.type === 'penalty' && q.done))
+              .filter((q) => !q.bonus)
               .map((q) => (q.type === 'daily' ? { ...q, done: false, progress: 0, doneAt: undefined } : q))
+          }
+          if (!quests.some((q) => q.bonus)) {
+            const b = BONUS_POOL[hash(today) % BONUS_POOL.length]
+            quests = [...quests, { id: 'b_' + today, title: b.title, desc: 'Bonus-Quest des Tages · +2 Kristalle', type: 'side', cat: b.cat, xp: 35, gold: 20, statXp: { [b.stat]: 25 }, done: false, progress: 0, bonus: true }]
           }
           const wk = weekKey()
           let cleanedWeek = s.home.cleanedWeek
@@ -226,7 +297,13 @@ export const useGame = create<GameState>()(
             quests = quests.map((q) => (q.type === 'weekly' ? { ...q, done: false, progress: 0, doneAt: undefined } : q))
             cleanedWeek = []
           }
-          set({ quests, player, questDay: today, questWeek: wk, home: { ...get().home, cleanedWeek } })
+          let boss = s.boss
+          if (!boss || boss.week !== wk) {
+            const hp = bossHpFor(player.level)
+            boss = { week: wk, idx: hash(wk) % BOSSES.length, hp, maxHp: hp, defeated: false }
+          }
+          set({ quests, player, questDay: today, questWeek: wk, boss, home: { ...get().home, cleanedWeek } })
+          get().checkGate()
           get().evaluate()
         },
 
@@ -251,12 +328,8 @@ export const useGame = create<GameState>()(
             let p = q.progress
             if (q.link) p = (d[q.link] as number | undefined) ?? 0
             else if (q.id in derived) p = derived[q.id]
-            if (p !== q.progress) {
-              if (!q.done && q.target && (p ?? 0) >= q.target) toComplete.push(q.id)
-              return { ...q, progress: p }
-            }
             if (!q.done && q.target && (p ?? 0) >= q.target) toComplete.push(q.id)
-            return q
+            return p !== q.progress ? { ...q, progress: p } : q
           })
           set({ quests })
           toComplete.forEach((id) => get().completeQuest(id))
@@ -274,7 +347,7 @@ export const useGame = create<GameState>()(
           fresh.forEach((a, i) =>
             setTimeout(() => {
               sfx.loot()
-              get().notify({ tone: 'loot', icon: a.icon, title: `Erfolg: ${a.name}`, body: (a.title ? `Neuer Titel „${a.title}“ · ` : '') + '+3 💎' })
+              get().notify({ tone: 'loot', icon: a.icon, title: `Erfolg: ${a.name}`, body: (a.title ? `Neuer Titel „${a.title}“ · ` : '') + '+3 Kristalle' })
             }, 400 + i * 700),
           )
           fresh.forEach((a) => log(`Erfolg freigeschaltet: ${a.name}`, a.icon))
@@ -290,11 +363,13 @@ export const useGame = create<GameState>()(
           set({ player: p })
           if (ups) {
             sfx.level()
+            buzz([30, 50, 30, 50, 80])
             set({ levelUp: p.level })
-            log(`Level Up! Du bist jetzt Level ${p.level}.`, '⬆️')
+            log(`Level Up! Du bist jetzt Level ${p.level}.`, 'stairs')
+            if (p.level >= JOB_LEVEL && !get().job) setTimeout(() => get().notify({ tone: 'system', icon: 'tiara', title: 'Jobwechsel freigeschaltet', body: 'Wähle deine Klasse im Status-Fenster.' }), 1500)
             get().evaluate()
           } else if (!silent) {
-            get().notify({ tone: 'good', icon: '✨', title: `+${n} XP` })
+            get().notify({ tone: 'good', icon: 'xp', title: `+${n} XP` })
           }
         },
 
@@ -324,24 +399,35 @@ export const useGame = create<GameState>()(
           set({ player: { ...p, statPoints: p.statPoints - 1, base: { ...p.base, [k]: p.base[k] + 1 } } })
         },
         setTitle: (title) => set((s) => ({ player: { ...s.player, title } })),
+        chooseJob: (id) => {
+          const j = JOBS.find((x) => x.id === id)
+          if (!j || get().player.level < JOB_LEVEL || get().job) return
+          sfx.level()
+          buzz([40, 40, 120])
+          set((s) => ({ job: id, titles: [...new Set([...s.titles, j.name])], player: { ...s.player, title: j.name } }))
+          get().notify({ tone: 'system', icon: j.art, title: `Klasse: ${j.name}`, body: j.desc })
+          log(`Jobwechsel abgeschlossen: ${j.name}`, j.art)
+          get().checkAchievements()
+        },
 
         completeQuest: (id) => {
           const s = get()
           const q = s.quests.find((x) => x.id === id)
           if (!q || q.done) return
           const today = dayKey()
+          const xp = Math.round(q.xp * jobBonus(q.cat))
           sfx.quest()
+          buzz(18)
           set({
             quests: s.quests.map((x) => (x.id === id ? { ...x, done: true, doneAt: Date.now() } : x)),
             history: { ...s.history, [today]: [...(s.history[today] ?? []), id] },
             stats: { ...s.stats, questsDone: s.stats.questsDone + 1 },
-            player: { ...s.player, gold: s.player.gold + q.gold },
+            player: { ...s.player, gold: s.player.gold + q.gold, gems: s.player.gems + (q.bonus ? 2 : 0) },
           })
-          get().notify({ tone: 'system', icon: '◆', title: 'Quest abgeschlossen', body: `${q.title} · +${q.xp} XP · +${q.gold} Gold` })
-          log(`Quest abgeschlossen: ${q.title}`, '✅')
+          get().notify({ tone: 'system', icon: 'xp', title: 'Quest abgeschlossen', body: `${q.title} · +${xp} XP${q.gold ? ` · +${q.gold} Gold` : ''}${q.bonus ? ' · +2 Kristalle' : ''}` })
+          log(`Quest abgeschlossen: ${q.title}`, 'star')
           get().addStatXp(q.statXp)
 
-          // loot
           const r = Math.random()
           const lootChance = q.type === 'daily' ? 0.3 : q.type === 'penalty' ? 0 : 0.75
           if (r < lootChance) {
@@ -353,7 +439,6 @@ export const useGame = create<GameState>()(
             get().grant('mat_ribbon')
           }
 
-          // daily completion bonus
           if (q.type === 'daily') {
             const dailies = get().quests.filter((x) => x.type === 'daily')
             if (dailies.every((x) => x.done)) {
@@ -363,12 +448,14 @@ export const useGame = create<GameState>()(
               get().grant('box_daily')
               setTimeout(() => {
                 sfx.loot()
-                get().notify({ tone: 'loot', icon: '🔥', title: 'Daily Quest abgeschlossen!', body: `Streak: ${streak} Tage · Tägliche Kiste erhalten` })
+                buzz([20, 40, 20, 40, 60])
+                get().notify({ tone: 'loot', icon: 'flame', title: 'Daily Quest abgeschlossen!', body: `Streak: ${streak} Tage · Tägliche Kiste erhalten` })
               }, 700)
-              log(`Alle Daily Quests geschafft – Streak ${streak}`, '🔥')
+              log(`Alle Daily Quests geschafft – Streak ${streak}`, 'flame')
             }
           }
-          get().gainXp(q.xp, true)
+          get().gainXp(xp, true)
+          get().damageBoss(xp, q.cat === 'body' ? 'move' : 'quest')
           get().evaluate()
           get().checkAchievements()
         },
@@ -392,7 +479,93 @@ export const useGame = create<GameState>()(
           set({ chestDay: dayKey(), player: { ...s.player, gold: s.player.gold + gold } })
           get().grant(item.id)
           sfx.loot()
+          buzz([15, 30, 15])
           set({ reveal: [{ ...ITEMS.find((i) => i.id === 'gold_pouch')!, name: `${gold} Gold`, desc: 'Login-Belohnung' }, item] })
+        },
+
+        damageBoss: (n, source) => {
+          const b = get().boss
+          if (!b || b.defeated || n <= 0) return
+          const boss = BOSSES[b.idx]
+          const crit = BOSS_WEAKNESS[boss.id] === source
+          const dmg = Math.round(n * (crit ? 2 : 1))
+          const hp = Math.max(0, b.hp - dmg)
+          set({ boss: { ...b, hp, defeated: hp === 0 }, bossHit: Date.now() })
+          if (crit) get().notify({ tone: 'good', icon: boss.art, title: `Kritischer Treffer! −${dmg}`, body: `${boss.name} ist schwach gegen: ${boss.weakness}` })
+          if (hp === 0) {
+            sfx.level()
+            buzz([50, 50, 50, 50, 150])
+            set((s) => ({ stats: { ...s.stats, bossesDefeated: s.stats.bossesDefeated + 1 }, player: { ...s.player, gold: s.player.gold + 300, gems: s.player.gems + 10 } }))
+            const loot = [rollItem(2), rollItem(1)]
+            loot.forEach((it) => get().grant(it.id))
+            setTimeout(() => {
+              set({ reveal: [{ ...ITEMS.find((i) => i.id === 'gold_chest')!, name: '300 Gold · 10 Kristalle', desc: `${boss.name} wurde besiegt!` }, ...loot] })
+              get().notify({ tone: 'loot', icon: boss.art, title: 'Wochenboss besiegt!', body: boss.name })
+            }, 600)
+            log(`Wochenboss besiegt: ${boss.name}`, boss.art)
+            get().checkAchievements()
+          }
+        },
+
+        startGate: (rank) => {
+          const g = GATE_RANKS.find((x) => x.rank === rank)
+          if (!g || get().gate) return
+          sfx.level()
+          buzz([20, 60, 20])
+          set({ gate: { rank, start: Date.now(), minutes: g.minutes } })
+          log(`Gate betreten: Rang ${rank} (${g.minutes} Min.)`, 'gate')
+        },
+        checkGate: () => {
+          const gs = get().gate
+          if (!gs || Date.now() - gs.start < gs.minutes * 60000) return
+          const g = GATE_RANKS.find((x) => x.rank === gs.rank)!
+          set({ gate: null })
+          const xp = Math.round(g.xp * (get().job === 'sage' ? 1 + JOB_BONUS : 1))
+          set((s) => ({ stats: { ...s.stats, gatesCleared: s.stats.gatesCleared + 1 } }))
+          get().addStatXp({ int: g.minutes, per: Math.round(g.minutes / 2) })
+          const item = rollItem(g.tier)
+          get().grant(item.id)
+          sfx.loot()
+          buzz([30, 40, 30, 40, 90])
+          set({ reveal: [item] })
+          get().notify({ tone: 'system', icon: 'gate', title: `Gate Rang ${g.rank} gecleart`, body: `+${xp} XP · ${g.minutes} Min. Fokus` })
+          log(`Gate gecleart: Rang ${g.rank}`, 'gate')
+          get().gainXp(xp, true)
+          get().damageBoss(g.minutes * 4, 'gate')
+          get().checkAchievements()
+        },
+        abandonGate: () => {
+          if (!get().gate) return
+          set({ gate: null })
+          get().notify({ tone: 'warn', icon: 'gate', title: 'Gate verlassen', body: 'Kein Loot diesmal. Nächstes Mal schaffst du es!' })
+        },
+        saveJournal: (j) => {
+          const day = dayKey()
+          const first = !get().journal[day]
+          set((s) => ({ journal: { ...s.journal, [day]: j } }))
+          if (first && (j.text.trim() || j.grateful.some((g) => g.trim()))) {
+            sfx.quest()
+            set((s) => ({ stats: { ...s.stats, journalDays: s.stats.journalDays + 1 } }))
+            get().addStatXp({ per: 15, int: 5 })
+            get().gainXp(20, true)
+            get().notify({ tone: 'system', icon: 'book', title: 'Reflexion gespeichert', body: '+20 XP · Wahrnehmung-Training' })
+            get().checkAchievements()
+          } else get().notify({ tone: 'good', icon: 'book', title: 'Tagebuch aktualisiert' })
+        },
+        cookRecipe: (id) => {
+          const r = RECIPES.find((x) => x.id === id)
+          if (!r) return
+          const day = dayKey()
+          if ((get().cooked[day] ?? []).includes(id)) return
+          sfx.quest()
+          buzz(18)
+          set((s) => ({ cooked: { ...s.cooked, [day]: [...(s.cooked[day] ?? []), id] }, stats: { ...s.stats, recipesCooked: s.stats.recipesCooked + 1 } }))
+          get().addStatXp({ vit: 20 })
+          get().gainXp(30, true)
+          get().notify({ tone: 'system', icon: r.art, title: `${r.name} gekocht`, body: '+30 XP · Vitalität-Training' })
+          log(`Gekocht: ${r.name}`, r.art)
+          get().damageBoss(30, 'food')
+          get().checkAchievements()
         },
 
         itemDef: (id) => ITEMS.find((i) => i.id === id) ?? get().customItems.find((i) => i.id === id),
@@ -414,14 +587,14 @@ export const useGame = create<GameState>()(
           const def = s.itemDef(defId)
           const entry = s.inventory.find((i) => i.defId === defId)
           if (!def || !entry || !def.effect || def.effect.kind === 'streakShield') return
-          const consume = () => set((st) => ({ inventory: st.inventory.map((i) => (i.defId === defId ? { ...i, qty: i.qty - 1 } : i)).filter((i) => i.qty > 0) }))
+          set((st) => ({ inventory: st.inventory.map((i) => (i.defId === defId ? { ...i, qty: i.qty - 1 } : i)).filter((i) => i.qty > 0) }))
           const e = def.effect
-          consume()
+          buzz(15)
           switch (e.kind) {
             case 'xp': sfx.quest(); get().gainXp(e.amount); break
-            case 'gold': sfx.coin(); set((st) => ({ player: { ...st.player, gold: st.player.gold + e.amount } })); get().notify({ tone: 'good', icon: '🪙', title: `+${e.amount} Gold` }); break
-            case 'gems': sfx.coin(); set((st) => ({ player: { ...st.player, gems: st.player.gems + e.amount } })); get().notify({ tone: 'good', icon: '💎', title: `+${e.amount} Kristalle` }); break
-            case 'statPoint': sfx.level(); set((st) => ({ player: { ...st.player, statPoints: st.player.statPoints + e.amount } })); get().notify({ tone: 'system', icon: '✨', title: '+1 Statuspunkt', body: 'Verteile ihn im Status-Fenster.' }); break
+            case 'gold': sfx.coin(); set((st) => ({ player: { ...st.player, gold: st.player.gold + e.amount } })); get().notify({ tone: 'good', icon: 'coin', title: `+${e.amount} Gold` }); break
+            case 'gems': sfx.coin(); set((st) => ({ player: { ...st.player, gems: st.player.gems + e.amount } })); get().notify({ tone: 'good', icon: 'gem', title: `+${e.amount} Kristalle` }); break
+            case 'statPoint': sfx.level(); set((st) => ({ player: { ...st.player, statPoints: st.player.statPoints + e.amount } })); get().notify({ tone: 'system', icon: 'stardust', title: '+1 Statuspunkt', body: 'Verteile ihn im Status-Fenster.' }); break
             case 'mystery': {
               const n = def.id === 'box_daily' ? 2 : 1
               const items = Array.from({ length: n }, () => rollItem(e.tier))
@@ -433,7 +606,7 @@ export const useGame = create<GameState>()(
             case 'reward':
               sfx.loot()
               set((st) => ({ stats: { ...st.stats, rewardsRedeemed: st.stats.rewardsRedeemed + 1 } }))
-              get().notify({ tone: 'loot', icon: def.icon, title: 'Belohnung eingelöst!', body: `${def.name} – du hast es dir verdient 💖` })
+              get().notify({ tone: 'loot', icon: def.icon, title: 'Belohnung eingelöst!', body: `${def.name} – du hast es dir verdient.` })
               log(`Belohnung eingelöst: ${def.name}`, def.icon)
               break
           }
@@ -458,12 +631,13 @@ export const useGame = create<GameState>()(
             set({ player: { ...s.player, gold: s.player.gold - def.price } })
           }
           sfx.coin()
+          buzz(12)
           get().grant(defId)
           get().notify({ tone: 'loot', icon: def.icon, title: 'Gekauft', body: def.name })
           return true
         },
         addReward: (name, icon, price) =>
-          set((s) => ({ customItems: [...s.customItems, { id: 'rw_' + uid(), name, icon: icon || '🎀', desc: 'Echte Belohnung.', rarity: price >= 1000 ? 'epic' : price >= 300 ? 'rare' : 'uncommon', type: 'reward', price, effect: { kind: 'reward' } }] })),
+          set((s) => ({ customItems: [...s.customItems, { id: 'rw_' + uid(), name, icon: icon || 'heart', desc: 'Echte Belohnung.', rarity: price >= 1000 ? 'epic' : price >= 300 ? 'rare' : 'uncommon', type: 'reward', price, effect: { kind: 'reward' } }] })),
         removeReward: (id) => set((s) => ({ customItems: s.customItems.filter((i) => i.id !== id) })),
         fuse: (defIds) => {
           const s = get()
@@ -481,8 +655,9 @@ export const useGame = create<GameState>()(
           const out = pool[Math.floor(Math.random() * pool.length)] ?? rollItem(1)
           get().grant(out.id)
           sfx.loot()
+          buzz([20, 30, 60])
           set({ reveal: [out] })
-          log(`Fusion erfolgreich: ${out.name}`, '🔮')
+          log(`Fusion erfolgreich: ${out.name}`, 'fusion')
           get().checkAchievements()
           return out
         },
@@ -493,6 +668,7 @@ export const useGame = create<GameState>()(
           set((s) => ({ health: { ...s.health, [day]: { ...emptyDay(), ...s.health[day], ...patch } } }))
           if (patch.sleep && !prev?.sleep) get().addStatXp({ vit: Math.round(patch.sleep * 2) })
           if (patch.mood && !prev?.mood) get().gainXp(5, true)
+          if (patch.water && patch.water > (prev?.water ?? 0)) get().damageBoss(5, 'food')
           get().evaluate()
           get().checkAchievements()
         },
@@ -501,6 +677,7 @@ export const useGame = create<GameState>()(
           const cur = get().health[day] ?? emptyDay()
           get().logHealth({ [k]: Math.max(0, cur[k] + n) }, day)
           if (k === 'meditationMin' && n > 0) get().addStatXp({ per: Math.round(n) })
+          if ((k === 'steps' || k === 'workoutMin') && n > 0) get().damageBoss(k === 'steps' ? Math.round(n / 100) : n, 'move')
         },
 
         cleanRoom: (id) => {
@@ -512,9 +689,12 @@ export const useGame = create<GameState>()(
           set((st) => ({ home: { ...st.home, cleanedWeek: [...new Set([...st.home.cleanedWeek, id])] } }))
           if (!already) {
             sfx.quest()
-            get().notify({ tone: 'system', icon: '🧹', title: `${room.name} aufgeräumt`, body: '+20 XP · Wahrnehmung-Training' })
+            buzz(18)
+            const xp = Math.round(20 * (get().job === 'hearth' ? 1 + JOB_BONUS : 1))
+            get().notify({ tone: 'system', icon: 'broom', title: `${room.name} aufgeräumt`, body: `+${xp} XP · Wahrnehmung-Training` })
             get().addStatXp({ per: 15 })
-            get().gainXp(20, true)
+            get().gainXp(xp, true)
+            get().damageBoss(40, 'clean')
           }
           get().evaluate()
           get().checkAchievements()
@@ -526,14 +706,14 @@ export const useGame = create<GameState>()(
         toggleNeed: (roomId, id) => {
           const n = get().home.rooms.find((r) => r.id === roomId)?.needs.find((x) => x.id === id)
           mapRoom(roomId, (r) => ({ ...r, needs: r.needs.map((x) => (x.id === id ? { ...x, done: !x.done } : x)) }))
-          if (n && !n.done) { sfx.tap(); get().gainXp(10) }
+          if (n && !n.done) { sfx.tap(); buzz(10); get().gainXp(10) }
         },
         removeNeed: (roomId, id) => mapRoom(roomId, (r) => ({ ...r, needs: r.needs.filter((x) => x.id !== id) })),
         needToShopping: (_roomId, n) => {
           get().addShopping(n.text)
-          get().notify({ tone: 'good', icon: '🛒', title: 'Auf die Einkaufsliste', body: n.text })
+          get().notify({ tone: 'good', icon: 'cart', title: 'Auf die Einkaufsliste', body: n.text })
         },
-        toggleDevice: (id) => { sfx.tap(); set((s) => ({ home: { ...s.home, devices: s.home.devices.map((d) => (d.id === id ? { ...d, on: !d.on } : d)) } })) },
+        toggleDevice: (id) => { sfx.tap(); buzz(8); set((s) => ({ home: { ...s.home, devices: s.home.devices.map((d) => (d.id === id ? { ...d, on: !d.on } : d)) } })) },
         setDevice: (id, value) => set((s) => ({ home: { ...s.home, devices: s.home.devices.map((d) => (d.id === id ? { ...d, value } : d)) } })),
         addFridge: (f) => { set((s) => ({ home: { ...s.home, fridge: [...s.home.fridge, { ...f, id: uid() }] } })); get().evaluate(); get().checkAchievements() },
         updateFridge: (id, patch) => set((s) => ({ home: { ...s.home, fridge: s.home.fridge.map((f) => (f.id === id ? { ...f, ...patch } : f)) } })),
@@ -556,7 +736,7 @@ export const useGame = create<GameState>()(
         })),
         saveOutfit: (name, items) => {
           set((s) => ({ outfits: [{ id: uid(), name, items, createdAt: Date.now() }, ...s.outfits] }))
-          get().notify({ tone: 'good', icon: '🪞', title: 'Outfit gespeichert', body: name })
+          get().notify({ tone: 'good', icon: 'mirror', title: 'Outfit gespeichert', body: name })
           get().checkAchievements()
         },
         removeOutfit: (id) => set((s) => ({ outfits: s.outfits.filter((o) => o.id !== id) })),
@@ -569,44 +749,82 @@ export const useGame = create<GameState>()(
           }))
           if (first) {
             sfx.quest()
-            get().notify({ tone: 'system', icon: '💄', title: 'Outfit des Tages geloggt', body: '+25 XP · Charme-Training' })
+            buzz(18)
+            const xp = Math.round(25 * (get().job === 'monarch' ? 1 + JOB_BONUS : 1))
+            get().notify({ tone: 'system', icon: 'lipstick', title: 'Outfit des Tages geloggt', body: `+${xp} XP · Charme-Training` })
             get().addStatXp({ cha: 20 })
-            get().gainXp(25, true)
-          } else get().notify({ tone: 'good', icon: '💄', title: 'Outfit aktualisiert' })
+            get().gainXp(xp, true)
+            get().damageBoss(25, 'style')
+          } else get().notify({ tone: 'good', icon: 'lipstick', title: 'Outfit aktualisiert' })
           get().evaluate()
         },
 
         setSettings: (p) => set((s) => ({ settings: { ...s.settings, ...p } })),
+        setCompanion: (p) => set((s) => ({ companion: { ...s.companion, ...p } })),
+        pushChat: (m) => set((s) => ({ chat: [...s.chat, { ...m, id: uid(), t: Date.now() }].slice(-60) })),
+        clearChat: () => set({ chat: [] }),
+        seeTip: (id) => set((s) => ({ tipsSeen: { ...s.tipsSeen, [id]: dayKey() } })),
         exportData: () => {
           const s = get()
           const out: Record<string, unknown> = {}
           PERSIST_KEYS.forEach((k) => (out[k] = s[k]))
-          return JSON.stringify({ app: 'gamifly', v: 1, data: out })
+          out.companion = { ...s.companion, apiKey: '' }
+          return JSON.stringify({ app: 'gamifly', v: 2, data: out })
         },
         importData: (json) => {
           try {
             const parsed = JSON.parse(json)
             if (parsed.app !== 'gamifly' || !parsed.data) return false
-            const data: Record<string, unknown> = {}
-            PERSIST_KEYS.forEach((k) => { if (k in parsed.data) data[k] = parsed.data[k] })
-            set(data as Partial<GameState>)
+            const data = migrateSave(parsed.data)
+            const keepKey = get().companion.apiKey
+            set({ ...(data as Partial<GameState>), companion: { ...defaultCompanion(), ...(data.companion as object), apiKey: keepKey } })
             get().rollover()
             return true
           } catch {
             return false
           }
         },
-        resetAll: () => set({ ...baseData(), tab: 'status' }),
+        resetAll: () => set({ ...baseData(), settings: get().settings, companion: get().companion, tab: 'status' }),
       }
     },
     {
       name: 'gamifly-save',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => idbStorage),
       partialize: (s) => Object.fromEntries(PERSIST_KEYS.map((k) => [k, s[k]])) as Partial<GameState>,
+      migrate: (persisted) => migrateSave(persisted as Record<string, unknown>) as unknown as GameState,
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<GameState>
+        return {
+          ...current, ...p,
+          settings: { ...current.settings, ...p.settings },
+          companion: { ...current.companion, ...p.companion },
+          stats: { ...current.stats, ...p.stats },
+        }
+      },
     },
   ),
 )
+
+/** Upgrades older saves: emoji icons become illustration keys, new fields get defaults. */
+function migrateSave(d: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...d }
+  const items = (out.customItems as ItemDef[] | undefined)?.map((i) => ({ ...i, icon: resolveArt(i.icon) === 'sparkle' && i.type === 'reward' ? 'heart' : resolveArt(i.icon) }))
+  if (items) out.customItems = items
+  const home = out.home as GameState['home'] | undefined
+  if (home) {
+    out.home = {
+      ...home,
+      rooms: home.rooms.map((r) => ({ ...r, items: r.items.map((it) => ({ ...it, icon: resolveArt(it.icon) !== 'sparkle' ? resolveArt(it.icon) : thingArt(it.name) })) })),
+      fridge: home.fridge.map((f) => ({ ...f, icon: foodArt(f.name) })),
+    }
+  }
+  const lg = out.log as LogEntry[] | undefined
+  if (lg) out.log = lg.map((l) => ({ ...l, icon: resolveArt(l.icon) }))
+  out.stats = { ...defaultStats(), ...(out.stats as object) }
+  out.settings = { theme: 'matcha', sound: true, haptics: true, ...(out.settings as object) }
+  return out
+}
 
 // ---------- selectors ----------
 export function effectiveStats(s: Pick<GameState, 'player' | 'equipped' | 'itemDef'>): { total: Stats; bonus: Stats } {

@@ -1,4 +1,4 @@
-import { Download, Leaf, Moon, RotateCcw, Sun, Upload, Volume2, VolumeX } from 'lucide-react'
+import { BookOpen, Download, Leaf, MessageCircle, Moon, RotateCcw, Smartphone, Sun, Upload, Volume2, VolumeX } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useGame } from '../store/useGame'
 import { Seg, Sheet } from './ui'
@@ -19,7 +19,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
   }
   const doImport = async (f: File) => {
     const ok = s.importData(await f.text())
-    s.notify(ok ? { tone: 'system', icon: '💾', title: 'Spielstand geladen' } : { tone: 'warn', icon: '⚠️', title: 'Import fehlgeschlagen', body: 'Die Datei ist kein gültiger Gamifly-Spielstand.' })
+    s.notify(ok ? { tone: 'system', icon: 'star', title: 'Spielstand geladen' } : { tone: 'warn', icon: 'warning', title: 'Import fehlgeschlagen', body: 'Die Datei ist kein gültiger Gamifly-Spielstand.' })
     if (ok) onClose()
   }
 
@@ -42,6 +42,19 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
             {s.settings.sound ? <><Volume2 size={16} /> An</> : <><VolumeX size={16} /> Aus</>}
           </button>
         </div>
+        <div className="row between">
+          <span style={{ fontWeight: 600 }}>Vibration</span>
+          <button className="btn ghost sm" onClick={() => s.setSettings({ haptics: !s.settings.haptics })}><Smartphone size={16} /> {s.settings.haptics ? 'An' : 'Aus'}</button>
+        </div>
+        <div className="divider" style={{ margin: 0 }} />
+        <div>
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>Lumi & Guide</div>
+          <div className="row wrap">
+            <button className="btn ghost sm" onClick={() => { onClose(); s.setUi({ companionOpen: true }) }}><MessageCircle size={16} /> Lumi öffnen</button>
+            <button className="btn ghost sm" onClick={() => { onClose(); s.setUi({ tourStep: 0 }) }}><Sun size={16} /> Tour starten</button>
+            <button className="btn ghost sm" onClick={() => { onClose(); s.setUi({ handbook: 'start' }) }}><BookOpen size={16} /> Handbuch</button>
+          </div>
+        </div>
         <div className="divider" style={{ margin: 0 }} />
         <div>
           <div style={{ fontWeight: 600, marginBottom: 4 }}>Spielstand</div>
@@ -63,7 +76,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
             </div>
           )}
         </div>
-        <p className="tiny muted center" style={{ margin: 0 }}>Gamifly · v1.0 · Als App installieren: im Browser „Zum Home-Bildschirm“ wählen.</p>
+        <p className="tiny muted center" style={{ margin: 0 }}>Gamifly · v2.0 · Als App installieren: im Browser „Zum Home-Bildschirm“ wählen.</p>
       </div>
     </Sheet>
   )

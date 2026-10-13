@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { X } from 'lucide-react'
+import { Art } from '../art/Art'
 
 export function Bar({ value, max, kind = 'xp', size }: { value: number; max: number; kind?: 'xp' | 'hp' | 'mp' | 'custom'; size?: 'lg'; color?: string }) {
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0
@@ -108,7 +109,7 @@ export const itemV = { hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0, 
 export function Empty({ icon, text, children }: { icon: string; text: string; children?: ReactNode }) {
   return (
     <div className="empty-state">
-      <div className="big">{icon}</div>
+      <div className="big"><Art name={icon} size={64} style={{ margin: '0 auto' }} /></div>
       <div>{text}</div>
       {children && <div className="mt">{children}</div>}
     </div>

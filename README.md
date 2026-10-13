@@ -4,15 +4,31 @@ Dein Alltag als RPG. Gamifly ist eine Web-App, die sich auch als App aufs Handy 
 
 ## Features
 
+**Lumi, dein System-Guide**
+- Animiertes Maskottchen oben rechts: blinzelt, wippt, spricht und hört zu
+- Spricht mit dir per Sprachausgabe (Stimme, Tempo und Tonhöhe einstellbar) und versteht Spracheingabe
+- Versteht Deutsch offline: Wasser, Schritte, Workout, Schlaf und Stimmung eintragen, Tagesbriefing, „Was als Nächstes?“, Rezepte, Outfits, Aufräumen, neue Quests, Einkaufsliste, Erklärungen zu allem
+- Optional mit Claude als Gehirn: eigener Anthropic-API-Schlüssel in Lumis Einstellungen, Lumi kann dann auch selbst Dinge in der App eintragen
+- Kontext-Tipps in der Sprechblase, einmal pro Bereich und Tag
+
+**Guide**
+- Interaktive Tour mit Spotlight durch alle Bereiche, von Lumi erzählt
+- Handbuch mit allen Systemen zum Nachlesen und Vorlesen
+
+**Eigene Illustrationen**
+- Über 200 handgezeichnete SVG-Illustrationen im Matcha-Stil statt Emojis: Items, Ausrüstung, Räume, Geräte, Kleidung, Lebensmittel, Stimmungen, Bosse und Erfolgsmedaillen
+
 **Status & RPG-System**
 - Level, XP-Kurve, Ränge E bis SS, Titel aus Erfolgen
 - Sechs Attribute (STR, VIT, AGI, INT, PER, CHA), die durch echtes Verhalten trainiert werden, plus freie Statuspunkte pro Level
 - HP und MP aus Schlaf, Wasser, Schritten, Stimmung und Meditation
 - Daily Quest mit Countdown, Streak und Strafzone bei Nichterfüllung
-- Tägliche Login-Kiste, System-Benachrichtigungen, Level-Up- und Loot-Animationen
+- Tägliche Login-Kiste, System-Benachrichtigungen, Level-Up- und Loot-Animationen, Vibration auf dem Handy
+- **Wochenboss:** fünf Bosse mit Schwächen, alles was du erledigst macht Schaden
+- **Klassen ab Level 10:** Glow Monarch, Iron Bloom, Sage of Pages, Hearth Keeper mit XP-Bonus
 
 **Quests**
-- Tägliche, wöchentliche, Story- und eigene Quests
+- Tägliche, wöchentliche, Story- und eigene Quests, dazu eine Bonus-Quest pro Tag
 - Gedrückt halten zum Abschließen
 - Wasser, Schritte, Workout, Schlaf, Kleiderschrank und Wohnung zählen automatisch
 
@@ -29,6 +45,7 @@ Dein Alltag als RPG. Gamifly ist eine Web-App, die sich auch als App aufs Handy 
 - Sauberkeit pro Raum mit Staub-Visuals, Aufräumen gibt XP
 - Kühlschrank mit Haltbarkeit, Gefrierfach, Vorrat und Einkaufsliste
 - Smart-Home-Demo: Lampen, Rollo, Speaker, Heizung und Saugroboter steuern die 3D-Szene
+- Rezeptvorschläge aus dem Kühlschrank, Fehlendes mit einem Tipp auf die Einkaufsliste
 
 **Style Studio**
 - Kleidung fotografieren: Farbe und Stoff werden automatisch erkannt
@@ -40,7 +57,9 @@ Dein Alltag als RPG. Gamifly ist eine Web-App, die sich auch als App aufs Handy 
 **Life & Health**
 - Wasser, Schritte, Workout, Schlaf, Stimmung
 - Atem-Timer für Meditation
-- 7-Tage-Charts und Habit-Streaks
+- **Fokus-Gates:** Konzentrations-Timer von Rang E (10 Min.) bis A (60 Min.) mit Loot
+- 7-Tage-Charts, Aktivitätskalender über 12 Wochen und Habit-Streaks
+- Abend-Reflexion mit Dankbarkeits-Tagebuch
 
 **Design**
 - Drei Themes: Matcha (Standard), Pastell und Night
@@ -62,7 +81,9 @@ npm run preview  # Build lokal ansehen
 
 ## Tech
 
-React 19, TypeScript, Vite, Three.js mit React Three Fiber und Drei, Framer Motion, Zustand.
+React 19, TypeScript, Vite, Three.js mit React Three Fiber und Drei, Framer Motion, Zustand, Web Speech API, Anthropic SDK (optional, nur bei eigenem Schlüssel).
+
+Alle Illustrationen ansehen: App mit `?artsheet` öffnen.
 
 ## Ideen für später
 

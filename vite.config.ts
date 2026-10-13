@@ -5,14 +5,7 @@ export default defineConfig({
   base: './',
   plugins: [react()],
   build: {
+    // three.js is large but only loaded lazily with the 3D pages
     chunkSizeWarningLimit: 1400,
-    rollupOptions: {
-      output: {
-        manualChunks: (id) => {
-          if (id.includes('node_modules/three/')) return 'three'
-          if (id.includes('@react-three') || id.includes('camera-controls') || id.includes('three-stdlib')) return 'r3f'
-        },
-      },
-    },
   },
 })

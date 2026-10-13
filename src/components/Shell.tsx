@@ -6,6 +6,8 @@ import { rankFor, xpToNext } from '../game/leveling'
 import { fmt } from '../lib/util'
 import { sfx } from '../lib/sfx'
 import { Bar } from './ui'
+import { Art } from '../art/Art'
+import { LumiFab } from '../companion/Companion'
 
 export function Ambient() {
   const stars = useMemo(
@@ -18,7 +20,7 @@ export function Ambient() {
       <div className="blob b2" />
       <div className="blob b3" />
       {stars.map((s, i) => (
-        <span key={i} className="star" style={{ left: `${s.left}%`, top: `${s.top}%`, animationDelay: `${s.delay}s`, fontSize: s.size }}>✦</span>
+        <svg key={i} className="star" viewBox="0 0 10 10" width={s.size} height={s.size} style={{ left: `${s.left}%`, top: `${s.top}%`, animationDelay: `${s.delay}s` }}><path d="M5 0Q5 5 10 5Q5 5 5 10Q5 5 0 5Q5 5 5 0Z" fill="currentColor" /></svg>
       ))}
     </div>
   )
@@ -44,8 +46,9 @@ export function Hud({ onSettings }: { onSettings: () => void }) {
             <span className="mono tiny muted">{fmt(p.xp)}/{fmt(xpToNext(p.level))}</span>
           </div>
         </div>
-        <span className="currency" title="Gold">🪙 {fmt(p.gold)}</span>
-        <span className="currency hide-sm" title="Kristalle">💎 {p.gems}</span>
+        <span className="currency" title="Gold"><Art name="coin" size={18} /> {fmt(p.gold)}</span>
+        <span className="currency hide-sm" title="Kristalle"><Art name="gem" size={18} /> {p.gems}</span>
+        <LumiFab />
         <button className="btn ghost icon" onClick={onSettings} aria-label="Einstellungen"><Settings size={18} /></button>
       </div>
     </header>
@@ -68,7 +71,7 @@ export function Nav() {
   const points = useGame((s) => s.player.statPoints)
   const openQuests = useGame((s) => s.quests.some((q) => q.type === 'penalty' && !q.done))
   return (
-    <nav className="nav">
+    <nav className="nav" data-tour="nav">
       {TABS.map(({ id, label, Icon }) => (
         <button key={id} className={tab === id ? 'active' : ''} onClick={() => { sfx.tap(); setTab(id); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
           {tab === id && <motion.span layoutId="nav-pill" className="nav-pill" transition={{ type: 'spring', stiffness: 420, damping: 34 }} />}
@@ -98,7 +101,7 @@ export function Toasts() {
             transition={{ type: 'spring', stiffness: 380, damping: 28 }}
             onClick={() => dismiss(t.id)}
           >
-            <div className="t-icon">{t.icon ?? '◆'}</div>
+            <div className="t-icon"><Art name={t.icon ?? 'xp'} size={26} /></div>
             <div className="grow">
               <div className="t-title">{t.tone === 'system' ? `[SYSTEM] ${t.title}` : t.title}</div>
               {t.body && <div className="t-body">{t.body}</div>}
@@ -190,14 +193,14 @@ export function LootReveal() {
                   transition={{ delay: 0.2 + i * 0.25, type: 'spring', stiffness: 160, damping: 14 }}
                   style={{ width: 170, padding: 18, borderRadius: 22, background: 'var(--surface-solid)', border: '2px solid var(--r)', boxShadow: '0 0 40px var(--r), var(--shadow-lg)' }}
                 >
-                  <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 2.4 }} style={{ fontSize: 56 }}>{it.icon}</motion.div>
+                  <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 2.4 }} style={{ display: 'grid', placeItems: 'center' }}><Art name={it.icon} size={84} /></motion.div>
                   <div style={{ fontWeight: 700, marginTop: 6 }}>{it.name}</div>
                   <div className="r-text tiny mono" style={{ textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 2 }}>{rarityLabel(it.rarity)}</div>
                   <div className="tiny muted" style={{ marginTop: 6 }}>{it.desc}</div>
                 </motion.div>
               ))}
             </div>
-            <motion.button className="btn" initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { delay: 0.6 } }} onClick={close}>Einsammeln ✨</motion.button>
+            <motion.button className="btn" initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { delay: 0.6 } }} onClick={close}>Einsammeln</motion.button>
           </div>
         </motion.div>
       )}

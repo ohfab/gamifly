@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Camera, ExternalLink, Heart, ImagePlus, Pause, Play, Plus, Save, Shuffle, Sparkles, Trash2, Wand2 } from 'lucide-react'
+import { Camera, ExternalLink, Heart, ImagePlus, Pause, Play, Plus, Save, Shuffle, Sparkles, Trash2, Wand2, Pencil } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { useGame } from '../store/useGame'
 import { Mannequin } from '../scene/Mannequin'
@@ -9,13 +9,14 @@ import { processClothPhoto } from '../lib/image'
 import { CAT_ICON, CAT_LABEL, clothIcon, FITS, OCCASIONS, SAMPLE_WARDROBE, SEASONS, SHOPS, VIBES, WEATHERS, gaps, similarQuery, suggest, type Occasion, type Weather } from '../lib/style'
 import { dayKey, uid } from '../lib/util'
 import { Empty, Seg, Sheet } from '../components/ui'
+import { Art } from '../art/Art'
 
 type View = 'closet' | 'ideas' | 'outfits' | 'shop'
 
 function Swatch({ c, size = 44 }: { c: Cloth; size?: number }) {
   return c.photo
     ? <img src={c.photo} alt={c.name} className="swatch" style={{ width: size, height: size }} />
-    : <span className="swatch" style={{ width: size, height: size, background: c.color, fontSize: size * 0.45 }}>{clothIcon(c)}</span>
+    : <span className="swatch" style={{ width: size, height: size, background: `linear-gradient(160deg, ${c.color}, color-mix(in srgb, ${c.color} 55%, white))` }}><Art name={clothIcon(c)} size={size * 0.7} /></span>
 }
 
 function ShopLinks({ q }: { q: string }) {
@@ -54,7 +55,7 @@ function ClothEditor({ open, onClose, edit }: { open: boolean; onClose: () => vo
     <Sheet open={open} onClose={onClose} title={edit ? 'Teil bearbeiten' : 'Neues Teil einlesen'}>
       <div className="col" style={{ gap: 14 }}>
         <div className="photo-drop" style={{ background: draft.photo ? undefined : `linear-gradient(135deg, ${draft.color}, color-mix(in srgb, ${draft.color} 40%, white))` }}>
-          {draft.photo ? <img src={draft.photo} alt="" /> : <span style={{ fontSize: 54 }}>{clothIcon(draft)}</span>}
+          {draft.photo ? <img src={draft.photo} alt="" /> : <Art name={clothIcon(draft)} size={96} />}
           {busy && <div className="photo-busy"><Sparkles /> analysiere…</div>}
           <div className="row" style={{ position: 'absolute', bottom: 10, right: 10 }}>
             <button className="btn sm" onClick={() => cam.current?.click()}><Camera size={16} /> Foto</button>
@@ -73,7 +74,7 @@ function ClothEditor({ open, onClose, edit }: { open: boolean; onClose: () => vo
         <div className="field">Kategorie
           <div className="chips">
             {(Object.keys(CAT_LABEL) as ClothCat[]).map((c) => (
-              <button key={c} className={`chip ${draft.cat === c ? 'active' : ''}`} onClick={() => set({ cat: c, fit: FITS[c]?.[0].v ?? 'default' })}>{CAT_ICON[c]} {CAT_LABEL[c]}</button>
+              <button key={c} className={`chip ${draft.cat === c ? 'active' : ''}`} onClick={() => set({ cat: c, fit: FITS[c]?.[0].v ?? 'default' })}><Art name={CAT_ICON[c]} size={18} /> {CAT_LABEL[c]}</button>
             ))}
           </div>
         </div>
@@ -93,7 +94,7 @@ function ClothEditor({ open, onClose, edit }: { open: boolean; onClose: () => vo
         )}
         <div className="row">
           {edit && <button className="btn danger" onClick={() => { s.removeCloth(edit.id); onClose() }}><Trash2 size={16} /></button>}
-          <button className="btn grow" onClick={save}>{edit ? 'Speichern' : 'In den Kleiderschrank ✨'}</button>
+          <button className="btn grow" onClick={save}>{edit ? 'Speichern' : 'In den Kleiderschrank'}</button>
         </div>
       </div>
     </Sheet>
@@ -136,7 +137,7 @@ export default function Style() {
   }
   const loadSamples = () => {
     useGame.setState((st) => ({ wardrobe: [...st.wardrobe, ...SAMPLE_WARDROBE.map((c) => ({ ...c, id: uid(), addedAt: Date.now() }))] }))
-    s.notify({ tone: 'system', icon: '👗', title: 'Beispiel-Kleiderschrank geladen', body: 'Ersetze die Teile nach und nach durch deine eigenen.' })
+    s.notify({ tone: 'system', icon: 'dress', title: 'Beispiel-Kleiderschrank geladen', body: 'Ersetze die Teile nach und nach durch deine eigenen.' })
     useGame.getState().evaluate()
   }
   const loadWeather = () => {
@@ -149,9 +150,9 @@ export default function Style() {
         const t = j.current.temperature_2m as number
         const rain = (j.current.precipitation as number) > 0.1 || [61, 63, 65, 80, 81, 82, 95].includes(j.current.weather_code)
         setWeather(rain ? 'regen' : t >= 22 ? 'warm' : t >= 12 ? 'mild' : 'kalt')
-        s.notify({ tone: 'good', icon: '🌤️', title: `Aktuell ${Math.round(t)}°C`, body: rain ? 'Regen – Jacke einplanen!' : 'Vorschläge angepasst.' })
+        s.notify({ tone: 'good', icon: 'cloud_sun', title: `Aktuell ${Math.round(t)}°C`, body: rain ? 'Regen – Jacke einplanen!' : 'Vorschläge angepasst.' })
       } catch {
-        s.notify({ tone: 'warn', icon: '🌧️', title: 'Wetter nicht verfügbar' })
+        s.notify({ tone: 'warn', icon: 'rain', title: 'Wetter nicht verfügbar' })
       } finally { setWxLoading(false) }
     }, () => setWxLoading(false))
   }
@@ -171,7 +172,7 @@ export default function Style() {
 
       <div className="style-layout">
         <div className="col" style={{ gap: 12 }}>
-          <div className="canvas-wrap style-canvas">
+          <div className="canvas-wrap style-canvas" data-tour="style3d">
             <Mannequin items={worn} texture={texture} spin={spin} aura={auraOn} theme={s.settings.theme} />
             <div className="fab-row" style={{ top: 12, right: 12, flexDirection: 'column' }}>
               <button className="btn ghost icon" onClick={() => setSpin(!spin)} aria-label="Drehen">{spin ? <Pause size={16} /> : <Play size={16} />}</button>
@@ -184,7 +185,7 @@ export default function Style() {
                 <span className="tiny">{h.why}</span>
               </motion.div>
             )}
-            {!worn.length && <div className="style-hint small muted">Tippe Teile im Kleiderschrank an, um sie anzuprobieren ✨</div>}
+            {!worn.length && <div className="style-hint small muted">Tippe Teile im Kleiderschrank an, um sie anzuprobieren.</div>}
           </div>
           <div className="card" style={{ padding: 14 }}>
             <div className="row wrap" style={{ gap: 6, minHeight: 34 }}>
@@ -202,14 +203,14 @@ export default function Style() {
               <button className="btn ghost icon" disabled={!worn.length} onClick={() => { s.saveOutfit(outfitName.trim() || `Look #${s.outfits.length + 1}`, wearing); setOutfitName('') }} aria-label="Outfit speichern"><Save size={16} /></button>
             </div>
             <button className="btn mt" style={{ width: '100%' }} disabled={!worn.length} onClick={() => s.wearOutfit(wearing)}>
-              💄 {wornToday ? 'Outfit des Tages aktualisieren' : 'Heute tragen (+25 XP)'}
+              <Art name="lipstick" size={20} /> {wornToday ? 'Outfit des Tages aktualisieren' : 'Heute tragen (+25 XP)'}
             </button>
           </div>
         </div>
 
         <div>
           <div className="scroll-x" style={{ marginBottom: 14 }}>
-            <Seg id="style" value={view} onChange={setView} options={[{ v: 'closet', label: '👗 Schrank' }, { v: 'ideas', label: '✨ Vorschläge' }, { v: 'outfits', label: '🪞 Outfits' }, { v: 'shop', label: '🛍️ Shopping' }]} />
+            <Seg id="style" value={view} onChange={setView} options={[{ v: 'closet', label: <span className="row" style={{ gap: 6 }}><Art name="dress" size={18} /> Schrank</span> }, { v: 'ideas', label: <span className="row" style={{ gap: 6 }}><Art name="sparkle" size={18} /> Vorschläge</span> }, { v: 'outfits', label: <span className="row" style={{ gap: 6 }}><Art name="mirror" size={18} /> Outfits</span> }, { v: 'shop', label: <span className="row" style={{ gap: 6 }}><Art name="shop_bag" size={18} /> Shopping</span> }]} />
           </div>
           <AnimatePresence mode="wait">
             <motion.div key={view} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
@@ -217,10 +218,10 @@ export default function Style() {
                 <div className="card">
                   <div className="chips" style={{ marginBottom: 12 }}>
                     <button className={`chip ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>Alle</button>
-                    {(Object.keys(CAT_LABEL) as ClothCat[]).map((c) => <button key={c} className={`chip ${filter === c ? 'active' : ''}`} onClick={() => setFilter(c)}>{CAT_ICON[c]} {CAT_LABEL[c]}</button>)}
+                    {(Object.keys(CAT_LABEL) as ClothCat[]).map((c) => <button key={c} className={`chip ${filter === c ? 'active' : ''}`} onClick={() => setFilter(c)}><Art name={CAT_ICON[c]} size={18} /> {CAT_LABEL[c]}</button>)}
                   </div>
                   {w.length === 0 ? (
-                    <Empty icon="👗" text="Dein Kleiderschrank ist noch leer. Fotografiere deine Kleidung – Farbe & Stoff werden automatisch erkannt.">
+                    <Empty icon="dress" text="Dein Kleiderschrank ist noch leer. Fotografiere deine Kleidung – Farbe & Stoff werden automatisch erkannt.">
                       <div className="row" style={{ justifyContent: 'center' }}>
                         <button className="btn" onClick={() => setEditor({ open: true, key: Date.now() })}><Camera size={16} /> Erstes Teil</button>
                         <button className="btn ghost" onClick={loadSamples}>Beispiele laden</button>
@@ -232,16 +233,16 @@ export default function Style() {
                       {closet.map((c, i) => (
                         <motion.div key={c.id} className={`cloth ${wearing.includes(c.id) ? 'on' : ''}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0, transition: { delay: i * 0.02 } }} whileTap={{ scale: 0.96 }} onClick={() => toggleWear(c)}>
                           <div className="cloth-img" style={{ background: c.photo ? undefined : `linear-gradient(160deg, ${c.color}, color-mix(in srgb, ${c.color} 55%, white))` }}>
-                            {c.photo ? <img src={c.photo} alt={c.name} /> : <span>{clothIcon(c)}</span>}
+                            {c.photo ? <img src={c.photo} alt={c.name} /> : <Art name={clothIcon(c)} size={64} />}
                             <button className={`fav ${c.fav ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); s.updateCloth(c.id, { fav: !c.fav }) }} aria-label="Favorit"><Heart size={14} fill={c.fav ? 'currentColor' : 'none'} /></button>
-                            {wearing.includes(c.id) && <span className="wearing">an ✓</span>}
+                            {wearing.includes(c.id) && <span className="wearing">an</span>}
                           </div>
                           <div className="row between" style={{ padding: '8px 4px 2px' }}>
                             <div className="grow" style={{ minWidth: 0 }}>
                               <div className="small" style={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</div>
                               <div className="tiny muted">{c.wears}× getragen</div>
                             </div>
-                            <button className="btn ghost xs" onClick={(e) => { e.stopPropagation(); setEditor({ open: true, edit: c, key: Date.now() }) }}>✎</button>
+                            <button className="btn ghost xs" onClick={(e) => { e.stopPropagation(); setEditor({ open: true, edit: c, key: Date.now() }) }} aria-label="Bearbeiten"><Pencil size={13} /></button>
                           </div>
                         </motion.div>
                       ))}
@@ -253,16 +254,16 @@ export default function Style() {
               {view === 'ideas' && (
                 <div className="col" style={{ gap: 14 }}>
                   <div className="card">
-                    <div className="field" style={{ marginBottom: 10 }}>Anlass<div className="chips">{OCCASIONS.map((o) => <button key={o.v} className={`chip ${occasion === o.v ? 'active' : ''}`} onClick={() => setOccasion(o.v)}>{o.label}</button>)}</div></div>
+                    <div className="field" style={{ marginBottom: 10 }}>Anlass<div className="chips">{OCCASIONS.map((o) => <button key={o.v} className={`chip ${occasion === o.v ? 'active' : ''}`} onClick={() => setOccasion(o.v)}><Art name={o.art} size={18} /> {o.label}</button>)}</div></div>
                     <div className="field">Wetter
                       <div className="chips">
-                        {WEATHERS.map((o) => <button key={o.v} className={`chip ${weather === o.v ? 'active' : ''}`} onClick={() => setWeather(o.v)}>{o.label}</button>)}
-                        <button className="chip" onClick={loadWeather} disabled={wxLoading}>📍 {wxLoading ? 'lädt…' : 'Live-Wetter'}</button>
+                        {WEATHERS.map((o) => <button key={o.v} className={`chip ${weather === o.v ? 'active' : ''}`} onClick={() => setWeather(o.v)}><Art name={o.art} size={18} /> {o.label}</button>)}
+                        <button className="chip" onClick={loadWeather} disabled={wxLoading}><Art name="pin" size={16} /> {wxLoading ? 'lädt…' : 'Live-Wetter'}</button>
                       </div>
                     </div>
                   </div>
                   {ideas.length === 0 ? (
-                    <div className="card"><Empty icon="🪄" text="Für Vorschläge brauchst du mindestens ein Kleid oder ein Oberteil + Unterteil.">{w.length === 0 && <button className="btn ghost" onClick={loadSamples}>Beispiel-Kleiderschrank laden</button>}</Empty></div>
+                    <div className="card"><Empty icon="sparkle" text="Für Vorschläge brauchst du mindestens ein Kleid oder ein Oberteil + Unterteil.">{w.length === 0 && <button className="btn ghost" onClick={loadSamples}>Beispiel-Kleiderschrank laden</button>}</Empty></div>
                   ) : ideas.map((sug, i) => (
                     <motion.div key={sug.items.map((x) => x.id).join()} className="card idea" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0, transition: { delay: i * 0.07 } }}>
                       <div className="row between">
@@ -273,7 +274,7 @@ export default function Style() {
                       <ul className="reasons">{sug.reasons.map((r) => <li key={r}>{r}</li>)}</ul>
                       <div className="row">
                         <button className="btn sm" onClick={() => setWearing(sug.items.map((x) => x.id))}><Wand2 size={14} /> Anprobieren</button>
-                        <button className="btn ghost sm" onClick={() => s.saveOutfit(`${OCCASIONS.find((o) => o.v === occasion)!.label.slice(2).trim()}-Look`, sug.items.map((x) => x.id))}><Save size={14} /> Speichern</button>
+                        <button className="btn ghost sm" onClick={() => s.saveOutfit(`${OCCASIONS.find((o) => o.v === occasion)!.label}-Look`, sug.items.map((x) => x.id))}><Save size={14} /> Speichern</button>
                       </div>
                     </motion.div>
                   ))}
@@ -283,7 +284,7 @@ export default function Style() {
 
               {view === 'outfits' && (
                 <div className="col" style={{ gap: 12 }}>
-                  {s.outfits.length === 0 && <div className="card"><Empty icon="🪞" text="Noch keine Outfits gespeichert. Stelle eins am Modell zusammen und speichere es." /></div>}
+                  {s.outfits.length === 0 && <div className="card"><Empty icon="mirror" text="Noch keine Outfits gespeichert. Stelle eins am Modell zusammen und speichere es." /></div>}
                   {s.outfits.map((o) => {
                     const items = o.items.map((id) => w.find((c) => c.id === id)).filter(Boolean) as Cloth[]
                     return (
@@ -295,7 +296,7 @@ export default function Style() {
                         <div className="row mt" style={{ gap: 6 }}>{items.map((c) => <Swatch key={c.id} c={c} size={40} />)}</div>
                         <div className="row mt">
                           <button className="btn sm" onClick={() => setWearing(o.items)}><Wand2 size={14} /> Anprobieren</button>
-                          <button className="btn ghost sm" onClick={() => { setWearing(o.items); s.wearOutfit(o.items) }}>💄 Heute tragen</button>
+                          <button className="btn ghost sm" onClick={() => { setWearing(o.items); s.wearOutfit(o.items) }}><Art name="lipstick" size={16} /> Heute tragen</button>
                         </div>
                       </motion.div>
                     )
@@ -319,13 +320,13 @@ export default function Style() {
               {view === 'shop' && (
                 <div className="col" style={{ gap: 12 }}>
                   <div className="card">
-                    <h3>🧩 Dir fehlt noch</h3>
+                    <h3 className="row" style={{ gap: 8 }}><Art name="puzzle" size={24} /> Dir fehlt noch</h3>
                     <p className="small muted" style={{ marginTop: -4 }}>Analyse deiner Capsule Wardrobe – diese Teile würden die meisten neuen Kombis freischalten.</p>
                     <div className="col" style={{ gap: 12 }}>
-                      {missing.length === 0 && <p className="small">Dein Schrank ist richtig gut aufgestellt. 💖</p>}
+                      {missing.length === 0 && <p className="small">Dein Schrank ist richtig gut aufgestellt.</p>}
                       {missing.map((g) => (
                         <div key={g.name} className="list-item" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-                          <div className="row"><span style={{ fontSize: 24 }}>{g.icon}</span><div className="grow"><b className="small">{g.name}</b><div className="tiny muted">{g.why}</div></div></div>
+                          <div className="row"><Art name={g.icon} size={36} /><div className="grow"><b className="small">{g.name}</b><div className="tiny muted">{g.why}</div></div></div>
                           <ShopLinks q={g.query} />
                         </div>
                       ))}
@@ -333,7 +334,7 @@ export default function Style() {
                   </div>
                   {worn.length > 0 && (
                     <div className="card">
-                      <h3>🔎 Ähnliche Teile zum aktuellen Look</h3>
+                      <h3 className="row" style={{ gap: 8 }}><Art name="search" size={24} /> Ähnliche Teile zum aktuellen Look</h3>
                       <div className="col" style={{ gap: 12 }}>
                         {worn.map((c) => (
                           <div key={c.id} className="col" style={{ gap: 6 }}>

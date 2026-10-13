@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Check } from 'lucide-react'
 import { useState } from 'react'
 import { useGame } from '../store/useGame'
 import { CAT_META } from '../game/quests'
@@ -7,6 +7,7 @@ import { STAT_KEYS, STAT_META } from '../game/leveling'
 import type { Quest, QuestCat, QuestType, StatKey } from '../game/types'
 import { fmt } from '../lib/util'
 import { ColorBar, Empty, HoldButton, Seg, Sheet } from '../components/ui'
+import { Art } from '../art/Art'
 
 type View = 'daily' | 'weekly' | 'main' | 'side'
 const VIEW_LABEL: Record<View, string> = { daily: 'Täglich', weekly: 'Wöchentlich', main: 'Story', side: 'Neben' }
@@ -22,10 +23,10 @@ function QuestCard({ q }: { q: Quest }) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -40 }}
-      className={`quest ${q.done ? 'done' : ''} ${q.type === 'penalty' ? 'penalty' : ''}`}
+      className={`quest ${q.done ? 'done' : ''} ${q.type === 'penalty' ? 'penalty' : ''} ${q.bonus ? 'bonus' : ''}`}
       style={{ ['--qc' as string]: cat.color }}
     >
-      <div className="q-icon">{cat.icon}</div>
+      <div className="q-icon"><Art name={q.type === 'penalty' ? 'warning' : q.bonus ? 'box_holo' : cat.icon} size={30} /></div>
       <div className="grow col" style={{ gap: 6 }}>
         <div className="row between" style={{ alignItems: 'flex-start' }}>
           <div>
@@ -43,16 +44,18 @@ function QuestCard({ q }: { q: Quest }) {
           </div>
         ) : null}
         <div className="row wrap" style={{ gap: 6 }}>
-          <span className="pill">✨ {q.xp} XP</span>
-          {q.gold > 0 && <span className="pill">🪙 {q.gold}</span>}
-          {Object.entries(q.statXp).map(([k, v]) => (v ? <span key={k} className="pill">{STAT_META[k as StatKey].icon} {STAT_META[k as StatKey].short}</span> : null))}
-          {q.link && !q.done && <span className="pill" style={{ color: 'var(--lilac-deep)' }}>⟳ automatisch</span>}
+          <span className="pill"><Art name="xp" size={14} /> {q.xp} XP</span>
+          {q.gold > 0 && <span className="pill"><Art name="coin" size={14} /> {q.gold}</span>}
+          {q.bonus && <span className="pill"><Art name="gem" size={14} /> +2</span>}
+          {Object.entries(q.statXp).map(([k, v]) => (v ? <span key={k} className="pill"><Art name={STAT_META[k as StatKey].icon} size={14} /> {STAT_META[k as StatKey].short}</span> : null))}
+          {q.link && !q.done && <span className="pill" style={{ color: 'var(--lilac-deep)' }}>automatisch</span>}
+          {q.bonus && !q.done && <span className="pill" style={{ color: 'var(--pink-deep)' }}>Bonus heute</span>}
         </div>
       </div>
       {q.done ? (
-        <motion.span className="q-done" initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }}>✓</motion.span>
+        <motion.span className="q-done" initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }}><Check size={20} strokeWidth={3} /></motion.span>
       ) : manual ? (
-        <HoldButton onDone={() => complete(q.id)}>✓</HoldButton>
+        <HoldButton onDone={() => complete(q.id)}><Check size={18} strokeWidth={3} /></HoldButton>
       ) : null}
     </motion.div>
   )
@@ -90,7 +93,7 @@ function NewQuest({ open, onClose }: { open: boolean; onClose: () => void }) {
         <div className="field">Kategorie
           <div className="chips">
             {(Object.keys(CAT_META) as QuestCat[]).map((c) => (
-              <button key={c} className={`chip ${cat === c ? 'active' : ''}`} onClick={() => setCat(c)}>{CAT_META[c].icon} {CAT_META[c].label}</button>
+              <button key={c} className={`chip ${cat === c ? 'active' : ''}`} onClick={() => setCat(c)}><Art name={CAT_META[c].icon} size={18} /> {CAT_META[c].label}</button>
             ))}
           </div>
         </div>
@@ -102,7 +105,7 @@ function NewQuest({ open, onClose }: { open: boolean; onClose: () => void }) {
         <div className="field">Trainiert Attribut
           <div className="chips">
             <button className={`chip ${stat === '' ? 'active' : ''}`} onClick={() => setStat('')}>Keins</button>
-            {STAT_KEYS.map((k) => <button key={k} className={`chip ${stat === k ? 'active' : ''}`} onClick={() => setStat(k)}>{STAT_META[k].icon} {STAT_META[k].short}</button>)}
+            {STAT_KEYS.map((k) => <button key={k} className={`chip ${stat === k ? 'active' : ''}`} onClick={() => setStat(k)}><Art name={STAT_META[k].icon} size={18} /> {STAT_META[k].short}</button>)}
           </div>
         </div>
         <button className="btn" disabled={!title.trim()} onClick={submit}><Plus size={16} /> Quest annehmen</button>
@@ -125,7 +128,7 @@ export default function Quests() {
     <>
       <div className="page-title">
         <div>
-          <p>Hold ✓ gedrückt, um abzuschließen</p>
+          <p>Halte den Haken gedrückt, um abzuschließen</p>
           <h1>Quest-<span className="accent">Log</span></h1>
         </div>
         <button className="btn" onClick={() => setAdding(true)}><Plus size={16} /> Quest</button>
@@ -142,13 +145,13 @@ export default function Quests() {
         <span className="small muted mono">{doneN}/{quests.filter((q) => q.type === view).length} erledigt</span>
       </div>
 
-      <div className="grid-2">
+      <div className="grid-2" data-tour="quests">
         <AnimatePresence mode="popLayout">
           {list.map((q) => <QuestCard key={q.id} q={q} />)}
         </AnimatePresence>
       </div>
       {!list.length && (
-        <Empty icon="🗺️" text={view === 'side' ? 'Noch keine Nebenquests. Erstelle eigene einmalige Aufgaben!' : 'Keine Quests hier.'}>
+        <Empty icon="calendar" text={view === 'side' ? 'Noch keine Nebenquests. Erstelle eigene einmalige Aufgaben!' : 'Keine Quests hier.'}>
           <button className="btn soft" onClick={() => setAdding(true)}><Plus size={16} /> Quest erstellen</button>
         </Empty>
       )}

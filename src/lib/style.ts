@@ -3,9 +3,9 @@ import { colorName, harmony, isNeutral } from './color'
 import { dayKey, daysBetween } from './util'
 
 export const CAT_LABEL: Record<ClothCat, string> = { top: 'Oberteil', bottom: 'Unterteil', dress: 'Kleid', outer: 'Jacke/Mantel', shoes: 'Schuhe', accessory: 'Accessoire' }
-export const CAT_ICON: Record<ClothCat, string> = { top: '👚', bottom: '👖', dress: '👗', outer: '🧥', shoes: '👟', accessory: '👜' }
+export const CAT_ICON: Record<ClothCat, string> = { top: 'tee', bottom: 'jeans', dress: 'dress', outer: 'coat', shoes: 'sneaker', accessory: 'handbag' }
 export const clothIcon = (c: { cat: ClothCat; fit: ClothFit }) =>
-  c.cat === 'accessory' ? (c.fit === 'hat' ? '👒' : c.fit === 'jewelry' ? '📿' : '👜') : CAT_ICON[c.cat]
+  c.cat === 'accessory' ? (c.fit === 'hat' ? 'hat' : c.fit === 'jewelry' ? 'necklace' : 'handbag') : c.cat === 'bottom' && c.fit === 'skirt' ? 'skirt' : CAT_ICON[c.cat]
 export const FITS: Partial<Record<ClothCat, { v: ClothFit; label: string }[]>> = {
   bottom: [{ v: 'pants', label: 'Hose' }, { v: 'skirt', label: 'Rock' }, { v: 'shorts', label: 'Shorts' }],
   accessory: [{ v: 'bag', label: 'Tasche' }, { v: 'hat', label: 'Hut/Cap' }, { v: 'jewelry', label: 'Schmuck' }],
@@ -15,16 +15,16 @@ export const SEASONS = ['Frühling', 'Sommer', 'Herbst', 'Winter']
 
 export type Occasion = 'alltag' | 'arbeit' | 'date' | 'sport' | 'party' | 'cozy'
 export type Weather = 'warm' | 'mild' | 'kalt' | 'regen'
-export const OCCASIONS: { v: Occasion; label: string; tags: string[] }[] = [
-  { v: 'alltag', label: '☕ Alltag', tags: ['clean girl', 'casual', 'streetwear', 'cozy'] },
-  { v: 'arbeit', label: '💼 Uni/Arbeit', tags: ['chic', 'business', 'clean girl'] },
-  { v: 'date', label: '💘 Date', tags: ['romantic', 'chic', 'y2k'] },
-  { v: 'sport', label: '🧘 Sport', tags: ['sporty'] },
-  { v: 'party', label: '🪩 Party', tags: ['y2k', 'chic', 'streetwear'] },
-  { v: 'cozy', label: '🧸 Cozy Day', tags: ['cozy', 'casual'] },
+export const OCCASIONS: { v: Occasion; label: string; art: string; tags: string[] }[] = [
+  { v: 'alltag', label: 'Alltag', art: 'coffee', tags: ['clean girl', 'casual', 'streetwear', 'cozy'] },
+  { v: 'arbeit', label: 'Uni/Arbeit', art: 'briefcase', tags: ['chic', 'business', 'clean girl'] },
+  { v: 'date', label: 'Date', art: 'heart', tags: ['romantic', 'chic', 'y2k'] },
+  { v: 'sport', label: 'Sport', art: 'yoga', tags: ['sporty'] },
+  { v: 'party', label: 'Party', art: 'disco', tags: ['y2k', 'chic', 'streetwear'] },
+  { v: 'cozy', label: 'Cozy Day', art: 'mug', tags: ['cozy', 'casual'] },
 ]
-export const WEATHERS: { v: Weather; label: string }[] = [
-  { v: 'warm', label: '☀️ Warm' }, { v: 'mild', label: '⛅ Mild' }, { v: 'kalt', label: '❄️ Kalt' }, { v: 'regen', label: '🌧️ Regen' },
+export const WEATHERS: { v: Weather; label: string; art: string }[] = [
+  { v: 'warm', label: 'Warm', art: 'sun' }, { v: 'mild', label: 'Mild', art: 'cloud_sun' }, { v: 'kalt', label: 'Kalt', art: 'snow' }, { v: 'regen', label: 'Regen', art: 'rain' },
 ]
 
 export interface Suggestion { items: Cloth[]; score: number; reasons: string[] }
@@ -74,7 +74,7 @@ export function suggest(w: Cloth[], occasion: Occasion, weather: Weather, seed =
     const needOuter = (weather === 'kalt' || weather === 'regen') && !outer ? -0.15 : 0
     const score = Math.max(0, Math.min(1, h.score * 0.45 + t * 0.25 + se * 0.15 + fr * 0.1 + fav + needOuter + rnd(i + 100) * 0.06))
     const reasons = [h.why]
-    if (t > 0.8) reasons.push(`Passt perfekt zu ${OCCASIONS.find((o) => o.v === occasion)!.label.slice(2).trim()}`)
+    if (t > 0.8) reasons.push(`Passt perfekt zu ${OCCASIONS.find((o) => o.v === occasion)!.label}`)
     if (fr > 0.8) reasons.push('Lange nicht getragen – Zeit für ein Comeback')
     if (needOuter) reasons.push('Tipp: Dir fehlt eine passende Jacke für das Wetter')
     if (outer && weather === 'regen') reasons.push('Mit Jacke gegen den Regen')
@@ -90,21 +90,21 @@ export function gaps(w: Cloth[]): Gap[] {
   const has = (f: (c: Cloth) => boolean) => w.some(f)
   const g: Gap[] = []
   if (!has((c) => c.cat === 'top' && isNeutral(c.color) && (colorName(c.color) === 'Weiß' || colorName(c.color) === 'Creme')))
-    g.push({ name: 'Weißes Basic-Top', why: 'Kombinierbar mit allem – das Fundament jeder Capsule Wardrobe.', query: 'weißes basic t-shirt', icon: '👚' })
+    g.push({ name: 'Weißes Basic-Top', why: 'Kombinierbar mit allem – das Fundament jeder Capsule Wardrobe.', query: 'weißes basic t-shirt', icon: 'tee' })
   if (!has((c) => c.cat === 'bottom' && c.fit === 'pants' && isNeutral(c.color)))
-    g.push({ name: 'Straight-Leg Jeans', why: 'Neutrale Hose für Alltag, Uni & Date.', query: 'straight leg jeans hellblau', icon: '👖' })
+    g.push({ name: 'Straight-Leg Jeans', why: 'Neutrale Hose für Alltag, Uni & Date.', query: 'straight leg jeans hellblau', icon: 'jeans' })
   if (!has((c) => c.cat === 'outer'))
-    g.push({ name: 'Trenchcoat in Beige', why: 'Für mildes & regnerisches Wetter, macht jedes Outfit chic.', query: 'trenchcoat beige', icon: '🧥' })
+    g.push({ name: 'Trenchcoat in Beige', why: 'Für mildes & regnerisches Wetter, macht jedes Outfit chic.', query: 'trenchcoat beige', icon: 'coat' })
   if (!has((c) => c.cat === 'shoes' && isNeutral(c.color)))
-    g.push({ name: 'Weiße Sneaker', why: 'Neutrale Schuhe, die zu fast allem passen.', query: 'weiße sneaker leder', icon: '👟' })
+    g.push({ name: 'Weiße Sneaker', why: 'Neutrale Schuhe, die zu fast allem passen.', query: 'weiße sneaker leder', icon: 'sneaker' })
   if (!has((c) => c.cat === 'accessory' && c.fit === 'bag'))
-    g.push({ name: 'Mini Shoulder Bag', why: 'Das Finishing-Touch-Item. Boost für CHA.', query: 'mini shoulder bag', icon: '👜' })
+    g.push({ name: 'Mini Shoulder Bag', why: 'Das Finishing-Touch-Item. Boost für CHA.', query: 'mini shoulder bag', icon: 'handbag' })
   if (!has((c) => c.cat === 'dress'))
-    g.push({ name: 'Midi-Kleid', why: 'Ein Teil = komplettes Outfit. Perfekt für Dates.', query: 'midi kleid satin', icon: '👗' })
+    g.push({ name: 'Midi-Kleid', why: 'Ein Teil = komplettes Outfit. Perfekt für Dates.', query: 'midi kleid satin', icon: 'dress' })
   if (!has((c) => c.tags.includes('cozy')))
-    g.push({ name: 'Oversized Strickpulli', why: 'Cozy-Days brauchen einen Lieblingspulli.', query: 'oversized strickpullover', icon: '🧶' })
+    g.push({ name: 'Oversized Strickpulli', why: 'Cozy-Days brauchen einen Lieblingspulli.', query: 'oversized strickpullover', icon: 'hoodie' })
   if (w.length >= 4 && !has((c) => !isNeutral(c.color)))
-    g.push({ name: 'Ein Farb-Statement', why: 'Dein Schrank ist sehr neutral – ein Pastell-Akzent bringt Leben rein.', query: 'pastell rosa cardigan', icon: '🎀' })
+    g.push({ name: 'Ein Farb-Statement', why: 'Dein Schrank ist sehr neutral – ein Pastell-Akzent bringt Leben rein.', query: 'pastell rosa cardigan', icon: 'bow' })
   return g
 }
 

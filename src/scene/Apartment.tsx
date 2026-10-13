@@ -4,6 +4,7 @@ import { createContext, forwardRef, useContext, useEffect, useImperativeHandle, 
 import * as THREE from 'three'
 import type { Device, Room } from '../game/types'
 import { ROOM_ICON } from '../data/home'
+import { Art } from '../art/Art'
 
 export const ROOM_BOUNDS: Record<string, { x: [number, number]; z: [number, number] }> = {
   living: { x: [-6, 0], z: [-4, 0] },
@@ -235,7 +236,7 @@ function Fridge({ onOpen, warn, portal }: { onOpen: () => void; warn: boolean; p
       </group>
       {warn && (
         <Html portal={portal as React.RefObject<HTMLElement>} position={[0, 2.35, 0]} center zIndexRange={[20, 0]}>
-          <div className="scene-badge warn">⏰</div>
+          <div className="scene-badge warn"><Art name="clock" size={22} /></div>
         </Html>
       )}
     </group>
@@ -376,7 +377,7 @@ function Furniture({ devices, onToggle, onFridge, onWardrobe, fridgeWarn, portal
         <mesh position={[0.33, 1, 0]}><boxGeometry args={[0.01, 1.9, 0.01]} /><M color={C.wallTop} /></mesh>
         <mesh position={[0.34, 1.05, -0.08]}><boxGeometry args={[0.03, 0.25, 0.03]} /><M color={C.gold} metal={0.5} /></mesh>
         <mesh position={[0.34, 1.05, 0.08]}><boxGeometry args={[0.03, 0.25, 0.03]} /><M color={C.gold} metal={0.5} /></mesh>
-        <Html portal={portal as React.RefObject<HTMLElement>} position={[0.4, 2.25, 0]} center zIndexRange={[20, 0]}><div className="scene-badge">👗</div></Html>
+        <Html portal={portal as React.RefObject<HTMLElement>} position={[0.4, 2.25, 0]} center zIndexRange={[20, 0]}><div className="scene-badge"><Art name="dress" size={22} /></div></Html>
       </group>
       <group position={[-2.2, 0, 3.6]}>
         <B p={[0, 0.38, 0]} s={[1.0, 0.06, 0.45]} c={C.white} />
@@ -519,7 +520,7 @@ export const Apartment = forwardRef<ApartmentHandle, Props>(function Apartment(p
           return (
             <Html portal={props.portal as React.RefObject<HTMLElement>} key={r.id} position={[c.x, 2.0, c.z]} center zIndexRange={[30, 0]}>
               <button className={`room-tag ${props.selected === r.id ? 'sel' : ''}`} onClick={() => props.onSelect(r.id)}>
-                <span>{ROOM_ICON[r.kind]}</span>
+                <Art name={ROOM_ICON[r.kind]} size={20} />
                 <b>{r.name}</b>
                 <i style={{ background: clean > 66 ? '#3fc796' : clean > 33 ? '#ffb84d' : '#ef5a7a' }} />
                 {open > 0 && <em>{open}</em>}
