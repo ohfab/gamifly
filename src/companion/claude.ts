@@ -108,7 +108,12 @@ let history: Msg[] = []
 export const resetClaude = () => { history = [] }
 
 export async function askClaude(text: string, apiKey: string): Promise<string> {
-  const { default: Client } = await import('@anthropic-ai/sdk')
+  let Client: typeof Anthropic
+  try {
+    Client = (await import('@anthropic-ai/sdk')).default
+  } catch {
+    throw new Error('Das KI-Gehirn konnte nicht geladen werden, vermutlich bist du offline. Ich antworte mit meinem eingebauten Wissen.')
+  }
   const client = new Client({ apiKey, dangerouslyAllowBrowser: true })
   history.push({ role: 'user', content: text })
   history.push({ role: 'system', content: `Aktueller App-Zustand:\n${JSON.stringify(snapshot())}` } as unknown as Msg)
